@@ -1,0 +1,11 @@
+{
+  "framework": "nextjs",
+  "functions": {
+    "api/(.*)": {
+      "runtime": "node"
+    }
+  },
+  "prisma": {
+    "seed": "node prisma/seed.mjs"
+  }
+}
