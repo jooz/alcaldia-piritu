@@ -7,6 +7,5 @@
     "api/**/*.js": {
       "runtime": "node"
     }
-  },
-  "plugins": {}
+  }
 }
