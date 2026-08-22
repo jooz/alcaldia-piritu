@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Categorías macro de solicitudes
+// ============================================================
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  active      Boolean  @default(true)
+  creado      DateTime @default(now())
+
+  helpTypes HelpType[]
+}
+
+// ============================================================
+// Recaudos generales
+// ============================================================
+model Requirement {
+  id               Int      @id @default(autoincrement())
+  name             String
+  condition        String
+  requiresValidity  Boolean  @default(false)
+  validityDays     Int      @default(0)
+  mandatory        Boolean  @default(true)
+  active           Boolean  @default(true)
+  creado           DateTime @default(now())
+
+  helpRequirements HelpRequirement[]
+}
+
+// ============================================================
+// Usuario del sistema (Alcaldía Piritú)
+// ============================================================
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String // hash bcrypt
+  nombre    String
+  email     String?
+  activo    Boolean  @default(true)
+  creado    DateTime @default(now())
+
+  accesos UserAcceso[]
+}
+
+// ============================================================
+// Ventana del sistema (cada item del menú)
+// ============================================================
+model Ventana {
+  id     Int    @id @default(autoincrement())
+  clave  String @unique // dashboard, usuarios, accesos...
+  titulo String
+  orden  Int    @default(0)
+
+  accesos UserAcceso[]
+}
+
+// ============================================================
+// Permiso: qué ventanas puede ver cada usuario
+// ============================================================
+model UserAcceso {
+  userId    Int
+  ventanaId Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ventana   Ventana @relation(fields: [ventanaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ventanaId])
+}
+
+// ============================================================
+// FASE 1: Modelos nuevos - Tipos de Ayuda, Áreas, Visitadores, Recaudos
+// ============================================================
+
+// Tipo de Ayuda (subcategorías vinculadas a Category) - Tarea 1.1
+model HelpType {
+  id          Int       @id @default(autoincrement())
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  active      Boolean   @default(true)
+  creado      DateTime  @default(now())
+
+  requirements HelpRequirement[]
+  @@index([categoryId])
+}
+
+// Áreas de Atención (Direcciones/Departamentos) - Tarea 1.2
+model AttentionArea {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  active      Boolean   @default(true)
+  creado      DateTime  @default(now())
+
+  visitors Visitor[]
+}
+
+// Visitadores (vinculados a AttentionArea) - Tarea 1.3
+model Visitor {
+  id        Int            @id @default(autoincrement())
+  areaId    Int
+  area      AttentionArea  @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  name      String
+  phone     String?
+  active    Boolean        @default(true)
+  creado    DateTime       @default(now())
+
+  @@index([areaId])
+}
+
+// Tabla intermedia para vincular HelpType con Requirement (N:M) - Tarea 1.4
+model HelpRequirement {
+  id          Int        @id @default(autoincrement())
+  helpTypeId  Int
+  helpType    HelpType   @relation(fields: [helpTypeId], references: [id], onDelete: Cascade)
+  requirementId Int
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@unique([helpTypeId, requirementId])
+  @@index([helpTypeId])
+  @@index([requirementId])
+}
