@@ -1,0 +1,12 @@
+{
+  "framework": "nextjs",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "node"
+    },
+    "api/**/*.js": {
+      "runtime": "node"
+    }
+  },
+  "plugins": {}
+}
