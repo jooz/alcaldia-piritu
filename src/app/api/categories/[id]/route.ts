@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function PATCH(request: NextRequest) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const body = await request.json();
-    const { id, ...data } = body;
-    
+    const { id: _, ...data } = body;
+
     const category = await prisma.category.update({
       where: { id: Number(id) },
       data: data,
@@ -16,12 +17,9 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    const { id } = await params;
 
     await prisma.category.delete({
       where: { id: Number(id) },
