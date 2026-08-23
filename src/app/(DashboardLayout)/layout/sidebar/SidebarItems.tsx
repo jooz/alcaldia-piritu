@@ -7,7 +7,7 @@ import {
   MenuItem,
   Submenu,
 } from "react-mui-sidebar";
-import { IconPoint, IconLayoutDashboard, IconUsers, IconShieldLock, IconCategory, IconFileCheck, IconTypography, IconCopy, IconMoodHappy, IconAperture, IconSettings } from "@tabler/icons-react";
+import { IconPoint, IconLayoutDashboard, IconUsers, IconShieldLock, IconCategory, IconFileCheck, IconAperture } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Upgrade } from "./Updrade";
@@ -26,11 +26,6 @@ const ICON_MAP: Record<string, any> = {
   categories: IconCategory,
   requirements: IconFileCheck,
   "attention-areas": IconAperture,
-  "help-requirements": IconSettings,
-  typography: IconTypography,
-  shadow: IconCopy,
-  icons: IconMoodHappy,
-  "sample-page": IconAperture,
 };
 
 const HREF_MAP: Record<string, string> = {
@@ -46,7 +41,7 @@ const HREF_MAP: Record<string, string> = {
 
 const SECCIONES = [
   { subheader: "HOME", claves: ["dashboard"] },
-  { subheader: "ADMINISTRACIÓN", claves: ["usuarios", "categories", "requirements", "attention-areas", "help-requirements", "accesos"] },
+  { subheader: "ADMINISTRACIÓN", claves: ["usuarios", "categories", "requirements", "attention-areas", "accesos"] },
 
 ];
 

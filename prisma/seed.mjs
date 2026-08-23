@@ -11,12 +11,7 @@ async function main() {
     { clave: "categories", titulo: "Categorías", orden: 3 },
     { clave: "requirements", titulo: "Recaudos", orden: 4 },
     { clave: "attention-areas", titulo: "Áreas de Atención", orden: 5 },
-    { clave: "help-requirements", titulo: "Config. Recaudos", orden: 6 },
-    { clave: "accesos", titulo: "Accesos", orden: 7 },
-    { clave: "typography", titulo: "Typography", orden: 8 },
-    { clave: "shadow", titulo: "Shadow", orden: 9 },
-    { clave: "icons", titulo: "Icons", orden: 10 },
-    { clave: "sample-page", titulo: "Sample Page", orden: 11 },
+    { clave: "accesos", titulo: "Accesos", orden: 6 },
   ];
 
   const ventanaIds = [];
