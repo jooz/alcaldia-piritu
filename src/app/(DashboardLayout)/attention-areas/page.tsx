@@ -396,7 +396,7 @@ const AttentionAreasPage = () => {
               >
                 Limpiar
               </Button>
-              <Button variant="contained" color="warning" onClick={handleGuardarArea} disabled={loading}>
+              <Button variant="contained" color="primary" onClick={handleGuardarArea} disabled={loading}>
                 {loading ? <CircularProgress size={24} /> : "Guardar"}
               </Button>
             </Stack>
@@ -569,7 +569,7 @@ const AttentionAreasPage = () => {
                     </Button>
                     <Button
                       variant="contained"
-                      color="warning"
+                      color="primary"
                       onClick={handleGuardarVisitor}
                     >
                       Guardar

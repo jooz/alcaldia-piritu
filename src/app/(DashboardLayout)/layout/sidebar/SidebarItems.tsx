@@ -41,17 +41,13 @@ const HREF_MAP: Record<string, string> = {
   requirements: "/requirements",
   "attention-areas": "/attention-areas",
   "help-requirements": "/help-requirements",
-  typography: "/utilities/typography",
-  shadow: "/utilities/shadow",
-  icons: "/icons",
-  "sample-page": "/sample-page",
+
 };
 
 const SECCIONES = [
   { subheader: "HOME", claves: ["dashboard"] },
   { subheader: "ADMINISTRACIÓN", claves: ["usuarios", "categories", "requirements", "attention-areas", "help-requirements", "accesos"] },
-  { subheader: "UTILITIES", claves: ["typography", "shadow"] },
-  { subheader: "EXTRA", claves: ["icons", "sample-page"] },
+
 ];
 
 function construirMenuItems(ventanas: VentanaMeta[]) {
@@ -174,7 +170,7 @@ const SidebarItems = ({ allowed, ventanas }: { allowed: string[]; ventanas: Vent
         </Logo>
         {renderMenuItems(visibleItems, pathDirect, allowed)}
         <Box px={2}>
-          <Upgrade />
+
         </Box>
       </MUI_Sidebar>
     </>
