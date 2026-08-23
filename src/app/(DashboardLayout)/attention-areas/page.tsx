@@ -389,7 +389,7 @@ const AttentionAreasPage = () => {
           </Box>
         </BlankCard>
 
-        <BlankCard sx={{ mt: 3 }}>
+        <BlankCard>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
