@@ -85,6 +85,7 @@ model HelpType {
   categoryId  Int
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   name        String
+  description String    @default("")
   active      Boolean   @default(true)
   creado      DateTime  @default(now())
 

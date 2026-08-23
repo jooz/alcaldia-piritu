@@ -10,7 +10,11 @@ export async function PATCH(
     const body = await request.json();
     const helpType = await prisma.helpType.update({
       where: { id: Number(id) },
-      data: body,
+      data: {
+        name: body.name,
+        description: body.description,
+        active: body.active,
+      },
     });
     return NextResponse.json(helpType);
   } catch (error) {
@@ -24,6 +28,19 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    const helpType = await prisma.helpType.findUnique({
+      where: { id: Number(id) },
+      include: { requirements: true },
+    });
+
+    if (helpType && helpType.requirements.length > 0) {
+      return NextResponse.json(
+        { error: 'No se puede eliminar: tiene recaudos asociados' },
+        { status: 400 }
+      );
+    }
+
     await prisma.helpType.delete({
       where: { id: Number(id) },
     });

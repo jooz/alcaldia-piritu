@@ -35,6 +35,7 @@ export async function POST(
       data: {
         categoryId: Number(id),
         name: body.name,
+        description: body.description ?? "",
         active: body.active ?? true,
       },
     });
