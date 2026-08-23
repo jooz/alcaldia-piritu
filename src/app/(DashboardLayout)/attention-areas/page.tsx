@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -22,272 +23,431 @@ import {
   Switch,
   CircularProgress,
   TablePagination,
+  Divider,
+  Tooltip,
 } from "@mui/material";
-import { IconPencil, IconTrash, IconPlus, IconUserPlus, IconUsers } from "@tabler/icons-react";
-import PageContainer from "../components/container/PageContainer";
-import BlankCard from "../components/shared/BlankCard";
+import { IconPencil, IconTrash, IconUser } from "@tabler/icons-react";
+import PageContainer from "@/app/(DashboardLayout)/components/container/PageContainer";
+import BlankCard from "@/app/(DashboardLayout)/components/shared/BlankCard";
+
+interface Visitor {
+  id: number;
+  name: string;
+  phone: string;
+  active: boolean;
+  creado: string;
+}
 
 interface AttentionArea {
   id: number;
   name: string;
-  description: string | null;
+  description: string;
+  cedula: string;
+  responsable: string;
+  telefono: string;
   active: boolean;
   creado: string;
   visitors?: Visitor[];
 }
 
-interface Visitor {
-  id: number;
-  name: string;
-  phone: string | null;
-  active: boolean;
-  creado: string;
-}
+const emptyAreaForm = {
+  name: "",
+  description: "",
+  cedula: "",
+  responsable: "",
+  telefono: "",
+};
 
-const emptyAreaForm = { name: "", description: "" };
-const emptyVisitorForm = { name: "", phone: "" };
+const emptyVisitorForm = {
+  name: "",
+  phone: "",
+};
 
 const AttentionAreasPage = () => {
-  // Attention Areas state
   const [areas, setAreas] = useState<AttentionArea[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [areaOpen, setAreaOpen] = useState(false);
-  const [editandoArea, setEditandoArea] = useState<AttentionArea | null>(null);
   const [areaForm, setAreaForm] = useState(emptyAreaForm);
+  const [editingAreaId, setEditingAreaId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Visitors state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const [visitorDialogOpen, setVisitorDialogOpen] = useState(false);
+  const [selectedArea, setSelectedArea] = useState<AttentionArea | null>(null);
   const [visitors, setVisitors] = useState<Visitor[]>([]);
-  const [vLoading, setVLoading] = useState(false);
-  const [vError, setVError] = useState<string | null>(null);
-  const [vOpen, setVOpen] = useState(false);
-  const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
-  const [selectedAreaName, setSelectedAreaName] = useState("");
-  const [editandoVisitor, setEditandoVisitor] = useState<Visitor | null>(null);
-  const [vForm, setVForm] = useState(emptyVisitorForm);
+  const [visitorForm, setVisitorForm] = useState(emptyVisitorForm);
+  const [editingVisitorId, setEditingVisitorId] = useState<number | null>(null);
+  const [loadingVisitors, setLoadingVisitors] = useState(false);
 
-  const cargarAreas = useCallback(async () => {
-    setLoading(true);
+  const cargarAreas = async () => {
     try {
-      const res = await fetch("/api/attention-areas");
-      if (!res.ok) throw new Error();
-      setAreas(await res.json());
+      setLoading(true);
       setError(null);
-    } catch {
-      setError("No se pudieron cargar las áreas de atención");
+      const res = await fetch("/api/attention-areas");
+      if (!res.ok) throw new Error("Error al cargar áreas");
+      const data = await res.json();
+      setAreas(data);
+    } catch (err: any) {
+      setError(err.message || "Error al cargar áreas");
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const cargarVisitors = useCallback(async (areaId: number) => {
-    setVLoading(true);
-    setVError(null);
-    try {
-      const res = await fetch(`/api/attention-areas/${areaId}/visitors`);
-      if (!res.ok) throw new Error();
-      setVisitors(await res.json());
-    } catch {
-      setVError("No se pudieron cargar los visitadores");
-    } finally {
-      setVLoading(false);
-    }
-  }, []);
+  };
 
   useEffect(() => {
     cargarAreas();
-  }, [cargarAreas]);
+  }, []);
 
-  // Area CRUD
   const handleGuardarArea = async () => {
-    setError(null);
+    if (
+      !areaForm.name.trim() ||
+      !areaForm.description.trim() ||
+      !areaForm.cedula.trim() ||
+      !areaForm.responsable.trim() ||
+      !areaForm.telefono.trim()
+    ) {
+      setError("Todos los campos son obligatorios.");
+      return;
+    }
+
     try {
-      const res = editandoArea
-        ? await fetch(`/api/attention-areas/${editandoArea.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: areaForm.name, description: areaForm.description }),
-          })
-        : await fetch("/api/attention-areas", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(areaForm),
-          });
+      setError(null);
+      setSuccess(null);
+      setLoading(true);
+
+      const url = editingAreaId
+        ? `/api/attention-areas/${editingAreaId}`
+        : "/api/attention-areas";
+      const method = editingAreaId ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(areaForm),
+      });
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Error guardando");
+        const errData = await res.json();
+        throw new Error(errData.message || "Error al guardar área");
       }
-      setAreaOpen(false);
+
+      setSuccess(editingAreaId ? "Área actualizada correctamente." : "Área creada correctamente.");
       setAreaForm(emptyAreaForm);
-      setEditandoArea(null);
+      setEditingAreaId(null);
       cargarAreas();
-    } catch (e: any) {
-      setError(e.message || "Error guardando");
+    } catch (err: any) {
+      setError(err.message || "Error al guardar área");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleActivoArea = async (a: AttentionArea) => {
-    await fetch(`/api/attention-areas/${a.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !a.active }),
+  const editarArea = (area: AttentionArea) => {
+    setAreaForm({
+      name: area.name,
+      description: area.description,
+      cedula: area.cedula,
+      responsable: area.responsable,
+      telefono: area.telefono,
     });
-    cargarAreas();
+    setEditingAreaId(area.id);
   };
 
-  const eliminarArea = async (a: AttentionArea) => {
-    if (!confirm(`Eliminar área "${a.name}"?`)) return;
-    const res = await fetch(`/api/attention-areas/${a.id}`, { method: "DELETE" });
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "No se pudo eliminar");
+  const eliminarArea = async (id: number) => {
+    if (!confirm("¿Está seguro de eliminar esta área?")) return;
+
+    try {
+      setError(null);
+      setSuccess(null);
+      setLoading(true);
+
+      const res = await fetch(`/api/attention-areas/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Error al eliminar área");
+      }
+
+      setSuccess("Área eliminada correctamente.");
+      cargarAreas();
+    } catch (err: any) {
+      setError(err.message || "Error al eliminar área");
+    } finally {
+      setLoading(false);
     }
-    cargarAreas();
   };
 
-  const abrirNuevaArea = () => {
-    setEditandoArea(null);
-    setAreaForm(emptyAreaForm);
-    setAreaOpen(true);
+  const toggleActivoArea = async (area: AttentionArea) => {
+    try {
+      setError(null);
+      const res = await fetch(`/api/attention-areas/${area.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !area.active }),
+      });
+
+      if (!res.ok) throw new Error("Error al cambiar estado del área");
+      cargarAreas();
+    } catch (err: any) {
+      setError(err.message || "Error al cambiar estado del área");
+    }
   };
 
-  const abrirEditarArea = (a: AttentionArea) => {
-    setEditandoArea(a);
-    setAreaForm({ name: a.name, description: a.description || "" });
-    setAreaOpen(true);
+  const abrirVisitors = async (area: AttentionArea) => {
+    setSelectedArea(area);
+    setVisitorDialogOpen(true);
+    setVisitorForm(emptyVisitorForm);
+    setEditingVisitorId(null);
+    await cargarVisitors(area.id);
   };
 
-  // Visitor CRUD
-  const abrirVisitors = (areaId: number, areaName: string) => {
-    setSelectedAreaId(areaId);
-    setSelectedAreaName(areaName);
-    setVOpen(true);
-    cargarVisitors(areaId);
+  const cargarVisitors = async (areaId: number) => {
+    try {
+      setLoadingVisitors(true);
+      const res = await fetch(`/api/attention-areas/${areaId}/visitors`);
+      if (!res.ok) throw new Error("Error al cargar visitadores");
+      const data = await res.json();
+      setVisitors(data);
+    } catch {
+      setVisitors([]);
+    } finally {
+      setLoadingVisitors(false);
+    }
   };
 
   const handleGuardarVisitor = async () => {
-    setVError(null);
-    if (!selectedAreaId) return;
+    if (!selectedArea) return;
+    if (!visitorForm.name.trim()) {
+      setError("El nombre del visitador es obligatorio.");
+      return;
+    }
+
     try {
-      const res = editandoVisitor
-        ? await fetch(`/api/visitors/${editandoVisitor.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: vForm.name, phone: vForm.phone }),
-          })
-        : await fetch(`/api/attention-areas/${selectedAreaId}/visitors`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: vForm.name, phone: vForm.phone }),
-          });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Error guardando");
+      setError(null);
+      setSuccess(null);
+
+      let res: Response;
+
+      if (editingVisitorId) {
+        res = await fetch(`/api/visitors/${editingVisitorId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(visitorForm),
+        });
+      } else {
+        res = await fetch(`/api/attention-areas/${selectedArea.id}/visitors`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(visitorForm),
+        });
       }
-      setVOpen(false);
-      setVForm(emptyVisitorForm);
-      setEditandoVisitor(null);
-      cargarVisitors(selectedAreaId);
-    } catch (e: any) {
-      setVError(e.message || "Error guardando");
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Error al guardar visitador");
+      }
+
+      setVisitorForm(emptyVisitorForm);
+      setEditingVisitorId(null);
+      cargarVisitors(selectedArea.id);
+    } catch (err: any) {
+      setError(err.message || "Error al guardar visitador");
     }
   };
 
-  const toggleActivoVisitor = async (v: Visitor) => {
-    if (!selectedAreaId) return;
-    await fetch(`/api/visitors/${v.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !v.active }),
-    });
-    cargarVisitors(selectedAreaId);
+  const editarVisitor = (visitor: Visitor) => {
+    setVisitorForm({ name: visitor.name, phone: visitor.phone });
+    setEditingVisitorId(visitor.id);
   };
 
-  const eliminarVisitor = async (v: Visitor) => {
-    if (!confirm(`Eliminar visitador "${v.name}"?`)) return;
-    const res = await fetch(`/api/visitors/${v.id}`, { method: "DELETE" });
-    if (!res.ok) {
-      const data = await res.json();
-      setVError(data.error || "No se pudo eliminar");
+  const eliminarVisitor = async (visitorId: number) => {
+    if (!confirm("¿Está seguro de eliminar este visitador?")) return;
+
+    try {
+      setError(null);
+      const res = await fetch(`/api/visitors/${visitorId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Error al eliminar visitador");
+      }
+
+      if (selectedArea) cargarVisitors(selectedArea.id);
+    } catch (err: any) {
+      setError(err.message || "Error al eliminar visitador");
     }
-    cargarVisitors(selectedAreaId!);
   };
 
-  const abrirNuevoVisitor = () => {
-    setEditandoVisitor(null);
-    setVForm(emptyVisitorForm);
+  const toggleActivoVisitor = async (visitor: Visitor) => {
+    try {
+      setError(null);
+      const res = await fetch(`/api/visitors/${visitor.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !visitor.active }),
+      });
+
+      if (!res.ok) throw new Error("Error al cambiar estado del visitador");
+      if (selectedArea) cargarVisitors(selectedArea.id);
+    } catch (err: any) {
+      setError(err.message || "Error al cambiar estado del visitador");
+    }
   };
 
-  const abrirEditarVisitor = (v: Visitor) => {
-    setEditandoVisitor(v);
-    setVForm({ name: v.name, phone: v.phone || "" });
-  };
+  const areasPaginadas = areas.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
-    <PageContainer title="Áreas de Atención" description="Gestión de Direcciones/Departamentos y Visitadores">
+    <PageContainer title="Gestionar Áreas de Atención" description="Administrar áreas de atención y sus visitadores">
       <Box>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h4" fontWeight={700}>Gestionar Áreas de Atención</Typography>
-          <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={abrirNuevaArea}>
-            Nueva Área
-          </Button>
-        </Stack>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
 
         <BlankCard>
+          <Box sx={{ p: 3, bgcolor: "grey.50", border: 1, borderColor: "divider", borderRadius: 1 }}>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Gestionar Áreas de Atención.
+            </Typography>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }}>
+              <TextField
+                label="Nombre del Departamento"
+                value={areaForm.name}
+                onChange={(e) => setAreaForm({ ...areaForm, name: e.target.value })}
+                required
+                placeholder="ej. Dirección de Bienestar Social"
+                fullWidth
+              />
+              <TextField
+                label="Función Principal del área de atención"
+                value={areaForm.description}
+                onChange={(e) => setAreaForm({ ...areaForm, description: e.target.value })}
+                required
+                multiline
+                placeholder="Detalle las funciones y alcance del área"
+                fullWidth
+              />
+            </Stack>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Datos del Responsable
+            </Typography>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }}>
+              <TextField
+                label="Cédula del Responsable"
+                value={areaForm.cedula}
+                onChange={(e) => setAreaForm({ ...areaForm, cedula: e.target.value })}
+                required
+                placeholder="ej. 15141471"
+                fullWidth
+              />
+              <TextField
+                label="Nombre del Responsable"
+                value={areaForm.responsable}
+                onChange={(e) => setAreaForm({ ...areaForm, responsable: e.target.value })}
+                required
+                placeholder="ej. Ester Romero"
+                fullWidth
+              />
+              <TextField
+                label="Teléfono del Responsable"
+                value={areaForm.telefono}
+                onChange={(e) => setAreaForm({ ...areaForm, telefono: e.target.value })}
+                required
+                placeholder="ej. 04126714388"
+                fullWidth
+              />
+            </Stack>
+
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="outlined"
+                color="inherit"
+                sx={{ bgcolor: "grey.100" }}
+                onClick={() => {
+                  setAreaForm(emptyAreaForm);
+                  setEditingAreaId(null);
+                }}
+              >
+                Limpiar
+              </Button>
+              <Button variant="contained" color="warning" onClick={handleGuardarArea} disabled={loading}>
+                {loading ? <CircularProgress size={24} /> : "Guardar"}
+              </Button>
+            </Stack>
+          </Box>
+        </BlankCard>
+
+        <BlankCard sx={{ mt: 3 }}>
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>ID</TableCell>
-                  <TableCell>Nombre del Área</TableCell>
-                  <TableCell>Descripción</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="center">Visitadores</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  <TableCell>Nombre Departamento</TableCell>
+                  <TableCell>Responsable</TableCell>
+                  <TableCell>Teléfono</TableCell>
+                  <TableCell>Función Principal</TableCell>
+                  <TableCell>Acción</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      <CircularProgress size={24} sx={{ my: 2 }} />
+                      <CircularProgress />
                     </TableCell>
                   </TableRow>
-                ) : areas.length === 0 ? (
+                ) : areasPaginadas.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">Sin áreas de atención</TableCell>
+                    <TableCell colSpan={6} align="center">
+                      No hay áreas registradas.
+                    </TableCell>
                   </TableRow>
                 ) : (
-                  areas.map((a) => (
-                    <TableRow key={a.id} hover>
-                      <TableCell>{a.id.toString().padStart(3, "0")}</TableCell>
-                      <TableCell>{a.name}</TableCell>
-                      <TableCell>{a.description || "-"}</TableCell>
+                  areasPaginadas.map((area) => (
+                    <TableRow key={area.id}>
+                      <TableCell>{area.id}</TableCell>
+                      <TableCell>{area.name}</TableCell>
+                      <TableCell>{area.responsable}</TableCell>
+                      <TableCell>{area.telefono}</TableCell>
+                      <TableCell>{area.description}</TableCell>
                       <TableCell>
-                        <Switch checked={a.active} onChange={() => toggleActivoArea(a)} size="small" />
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          onClick={() => abrirVisitors(a.id, a.name)}
-                          size="small"
-                          aria-label="Gestionar visitadores"
-                        >
-                          <IconUsers size={18} />
-                        </IconButton>
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton onClick={() => abrirEditarArea(a)} size="small">
-                          <IconPencil size={18} />
-                        </IconButton>
-                        <IconButton onClick={() => eliminarArea(a)} size="small" color="error">
-                          <IconTrash size={18} />
-                        </IconButton>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Tooltip title={area.active ? "Desactivar" : "Activar"}>
+                            <Switch
+                              checked={area.active}
+                              color="success"
+                              onChange={() => toggleActivoArea(area)}
+                            />
+                          </Tooltip>
+                          <Tooltip title="Editar">
+                            <IconButton color="default" size="small" onClick={() => editarArea(area)}>
+                              <IconPencil size={18} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Asociar Visitadores">
+                            <IconButton color="primary" size="small" onClick={() => abrirVisitors(area)}>
+                              <IconUser size={18} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Eliminar">
+                            <IconButton color="error" size="small" onClick={() => eliminarArea(area.id)}>
+                              <IconTrash size={18} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))
@@ -295,93 +455,112 @@ const AttentionAreasPage = () => {
               </TableBody>
             </Table>
           </TableContainer>
+          <TablePagination
+            component="div"
+            count={areas.length}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10));
+              setPage(0);
+            }}
+            rowsPerPageOptions={[5, 10, 25]}
+          />
         </BlankCard>
 
-        {/* Area Modal */}
-        <Dialog open={areaOpen} onClose={() => setAreaOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>{editandoArea ? `Editar: ${editandoArea.name}` : "Nueva Área de Atención"}</DialogTitle>
+        <Dialog
+          open={visitorDialogOpen}
+          onClose={() => setVisitorDialogOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Visitadores — {selectedArea?.name}</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} mt={1}>
-              <TextField
-                label="Nombre del Área"
-                fullWidth
-                value={areaForm.name}
-                onChange={(e) => setAreaForm({ ...areaForm, name: e.target.value })}
-              />
-              <TextField
-                label="Descripción"
-                fullWidth
-                multiline
-                rows={3}
-                value={areaForm.description}
-                onChange={(e) => setAreaForm({ ...areaForm, description: e.target.value })}
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={() => setAreaOpen(false)}>Cancelar</Button>
-            <Button variant="contained" onClick={handleGuardarArea}>Guardar</Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Visitors Modal */}
-        <Dialog open={vOpen} onClose={() => setVOpen(false)} maxWidth="md" fullWidth>
-          <DialogTitle>
-            {selectedAreaName ? `Visitadores - ${selectedAreaName}` : "Visitadores"}
-          </DialogTitle>
-          <DialogContent>
-            <Box>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Lista de Visitadores</Typography>
-                <Button variant="contained" startIcon={<IconUserPlus size={18} />} onClick={abrirNuevoVisitor}>
-                  Nuevo Visitador
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <TextField
+                  label="Nombre"
+                  value={visitorForm.name}
+                  onChange={(e) => setVisitorForm({ ...visitorForm, name: e.target.value })}
+                  required
+                  fullWidth
+                />
+                <TextField
+                  label="Teléfono"
+                  value={visitorForm.phone}
+                  onChange={(e) => setVisitorForm({ ...visitorForm, phone: e.target.value })}
+                  fullWidth
+                />
+              </Stack>
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  sx={{ bgcolor: "grey.100" }}
+                  onClick={() => {
+                    setVisitorForm(emptyVisitorForm);
+                    setEditingVisitorId(null);
+                  }}
+                >
+                  Limpiar
+                </Button>
+                <Button variant="contained" color="warning" onClick={handleGuardarVisitor}>
+                  Guardar
                 </Button>
               </Stack>
 
-              {vError && (
-                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setVError(null)}>
-                  {vError}
-                </Alert>
-              )}
-
               <TableContainer component={Paper}>
-                <Table>
+                <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell>ID</TableCell>
                       <TableCell>Nombre</TableCell>
                       <TableCell>Teléfono</TableCell>
                       <TableCell>Estado</TableCell>
-                      <TableCell align="right">Acciones</TableCell>
+                      <TableCell>Acciones</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {vLoading ? (
+                    {loadingVisitors ? (
                       <TableRow>
                         <TableCell colSpan={5} align="center">
-                          <CircularProgress size={24} sx={{ my: 2 }} />
+                          <CircularProgress size={24} />
                         </TableCell>
                       </TableRow>
                     ) : visitors.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center">Sin visitadores</TableCell>
+                        <TableCell colSpan={5} align="center">
+                          No hay visitadores registrados.
+                        </TableCell>
                       </TableRow>
                     ) : (
-                      visitors.map((v) => (
-                        <TableRow key={v.id} hover>
-                          <TableCell>{v.id.toString().padStart(3, "0")}</TableCell>
-                          <TableCell>{v.name}</TableCell>
-                          <TableCell>{v.phone || "-"}</TableCell>
+                      visitors.map((visitor) => (
+                        <TableRow key={visitor.id}>
+                          <TableCell>{visitor.id}</TableCell>
+                          <TableCell>{visitor.name}</TableCell>
+                          <TableCell>{visitor.phone}</TableCell>
                           <TableCell>
-                            <Switch checked={v.active} onChange={() => toggleActivoVisitor(v)} size="small" />
+                            <Switch
+                              checked={visitor.active}
+                              color="success"
+                              size="small"
+                              onChange={() => toggleActivoVisitor(visitor)}
+                            />
                           </TableCell>
-                          <TableCell align="right">
-                            <IconButton onClick={() => abrirEditarVisitor(v)} size="small">
-                              <IconPencil size={18} />
-                            </IconButton>
-                            <IconButton onClick={() => eliminarVisitor(v)} size="small" color="error">
-                              <IconTrash size={18} />
-                            </IconButton>
+                          <TableCell>
+                            <Stack direction="row" spacing={1}>
+                              <Tooltip title="Editar">
+                                <IconButton size="small" onClick={() => editarVisitor(visitor)}>
+                                  <IconPencil size={16} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Eliminar">
+                                <IconButton color="error" size="small" onClick={() => eliminarVisitor(visitor.id)}>
+                                  <IconTrash size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                       ))
@@ -389,35 +568,11 @@ const AttentionAreasPage = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-
-              <Dialog open={editandoVisitor !== null || vForm.name !== ""} onClose={() => {
-                setEditandoVisitor(null);
-                setVForm(emptyVisitorForm);
-              }} maxWidth="sm" fullWidth>
-                <DialogTitle>{editandoVisitor ? `Editar: ${editandoVisitor.name}` : "Nuevo Visitador"}</DialogTitle>
-                <DialogContent>
-                  <Stack spacing={2} mt={1}>
-                    <TextField
-                      label="Nombre del Visitador"
-                      fullWidth
-                      value={vForm.name}
-                      onChange={(e) => setVForm({ ...vForm, name: e.target.value })}
-                    />
-                    <TextField
-                      label="Teléfono"
-                      fullWidth
-                      value={vForm.phone}
-                      onChange={(e) => setVForm({ ...vForm, phone: e.target.value })}
-                    />
-                  </Stack>
-                </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                  <Button onClick={() => { setEditandoVisitor(null); setVForm(emptyVisitorForm); }}>Cancelar</Button>
-                  <Button variant="contained" onClick={handleGuardarVisitor}>Guardar</Button>
-                </DialogActions>
-              </Dialog>
-            </Box>
+            </Stack>
           </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setVisitorDialogOpen(false)}>Cerrar</Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </PageContainer>

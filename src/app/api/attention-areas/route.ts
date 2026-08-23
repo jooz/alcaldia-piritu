@@ -22,6 +22,9 @@ export async function POST(request: NextRequest) {
       data: {
         name: body.name,
         description: body.description,
+        cedula: body.cedula ?? "",
+        responsable: body.responsable ?? "",
+        telefono: body.telefono ?? "",
         active: body.active ?? true,
       },
     });

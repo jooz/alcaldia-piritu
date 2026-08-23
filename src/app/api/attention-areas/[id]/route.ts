@@ -10,7 +10,14 @@ export async function PATCH(
     const body = await request.json();
     const area = await prisma.attentionArea.update({
       where: { id: Number(id) },
-      data: body,
+      data: {
+        name: body.name,
+        description: body.description,
+        cedula: body.cedula,
+        responsable: body.responsable,
+        telefono: body.telefono,
+        active: body.active,
+      },
     });
     return NextResponse.json(area);
   } catch (error) {
@@ -24,6 +31,19 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    const area = await prisma.attentionArea.findUnique({
+      where: { id: Number(id) },
+      include: { visitors: true },
+    });
+
+    if (area && area.visitors.length > 0) {
+      return NextResponse.json(
+        { error: 'No se puede eliminar: tiene visitadores asociados' },
+        { status: 400 }
+      );
+    }
+
     await prisma.attentionArea.delete({
       where: { id: Number(id) },
     });
