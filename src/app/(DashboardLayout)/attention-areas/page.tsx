@@ -32,9 +32,11 @@ import BlankCard from "@/app/(DashboardLayout)/components/shared/BlankCard";
 
 interface Visitor {
   id: number;
+  cedula: string;
   name: string;
   phone: string;
   active: boolean;
+  areaId: number;
   creado: string;
 }
 
@@ -59,6 +61,7 @@ const emptyAreaForm = {
 };
 
 const emptyVisitorForm = {
+  cedula: "",
   name: "",
   phone: "",
 };
@@ -80,6 +83,8 @@ const AttentionAreasPage = () => {
   const [visitorForm, setVisitorForm] = useState(emptyVisitorForm);
   const [editingVisitorId, setEditingVisitorId] = useState<number | null>(null);
   const [loadingVisitors, setLoadingVisitors] = useState(false);
+  const [visitorPage, setVisitorPage] = useState(0);
+  const [visitorRowsPerPage, setVisitorRowsPerPage] = useState(5);
 
   const cargarAreas = async () => {
     try {
@@ -202,6 +207,7 @@ const AttentionAreasPage = () => {
     setVisitorDialogOpen(true);
     setVisitorForm(emptyVisitorForm);
     setEditingVisitorId(null);
+    setVisitorPage(0);
     await cargarVisitors(area.id);
   };
 
@@ -221,8 +227,16 @@ const AttentionAreasPage = () => {
 
   const handleGuardarVisitor = async () => {
     if (!selectedArea) return;
+    if (!visitorForm.cedula.trim()) {
+      setError("La cédula del visitador es obligatoria.");
+      return;
+    }
     if (!visitorForm.name.trim()) {
       setError("El nombre del visitador es obligatorio.");
+      return;
+    }
+    if (!visitorForm.phone.trim()) {
+      setError("El teléfono del visitador es obligatorio.");
       return;
     }
 
@@ -260,7 +274,7 @@ const AttentionAreasPage = () => {
   };
 
   const editarVisitor = (visitor: Visitor) => {
-    setVisitorForm({ name: visitor.name, phone: visitor.phone });
+    setVisitorForm({ cedula: visitor.cedula, name: visitor.name, phone: visitor.phone });
     setEditingVisitorId(visitor.id);
   };
 
@@ -475,102 +489,188 @@ const AttentionAreasPage = () => {
           maxWidth="md"
           fullWidth
         >
-          <DialogTitle>Visitadores — {selectedArea?.name}</DialogTitle>
+          <DialogTitle fontWeight={700}>
+            Gestionar Visitadores del Áreas de Atención.
+          </DialogTitle>
           <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <TextField
-                  label="Nombre"
-                  value={visitorForm.name}
-                  onChange={(e) => setVisitorForm({ ...visitorForm, name: e.target.value })}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  label="Teléfono"
-                  value={visitorForm.phone}
-                  onChange={(e) => setVisitorForm({ ...visitorForm, phone: e.target.value })}
-                  fullWidth
-                />
-              </Stack>
-              <Stack direction="row" spacing={2}>
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  sx={{ bgcolor: "grey.100" }}
-                  onClick={() => {
-                    setVisitorForm(emptyVisitorForm);
-                    setEditingVisitorId(null);
-                  }}
-                >
-                  Limpiar
-                </Button>
-                <Button variant="contained" color="warning" onClick={handleGuardarVisitor}>
-                  Guardar
-                </Button>
-              </Stack>
+            <Box>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                  {error}
+                </Alert>
+              )}
 
-              <TableContainer component={Paper}>
+              {/* Upper Section: Formulario */}
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: "grey.50",
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: "grey.200",
+                  mb: 3,
+                }}
+              >
+                <Stack spacing={2}>
+                  <TextField
+                    label="Nombre del Departamento"
+                    fullWidth
+                    value={selectedArea?.name || ""}
+                    disabled
+                    size="small"
+                    sx={{
+                      "& .MuiInputBase-root.Mui-disabled": {
+                        bgcolor: "grey.100",
+                      },
+                    }}
+                  />
+
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <TextField
+                      label="Cédula del Visitador"
+                      fullWidth
+                      required
+                      placeholder="ej. 15141471"
+                      value={visitorForm.cedula}
+                      onChange={(e) => setVisitorForm({ ...visitorForm, cedula: e.target.value })}
+                      size="small"
+                    />
+                    <TextField
+                      label="Nombre del Visitador"
+                      fullWidth
+                      required
+                      placeholder="ej. Ester Romero"
+                      value={visitorForm.name}
+                      onChange={(e) => setVisitorForm({ ...visitorForm, name: e.target.value })}
+                      size="small"
+                    />
+                    <TextField
+                      label="Teléfono del Visitador"
+                      fullWidth
+                      required
+                      placeholder="ej. 04126714388"
+                      value={visitorForm.phone}
+                      onChange={(e) => setVisitorForm({ ...visitorForm, phone: e.target.value })}
+                      size="small"
+                    />
+                  </Stack>
+
+                  <Stack direction="row" spacing={2} justifyContent="flex-end">
+                    <Button
+                      variant="outlined"
+                      color="inherit"
+                      onClick={() => {
+                        setVisitorForm(emptyVisitorForm);
+                        setEditingVisitorId(null);
+                      }}
+                      sx={{ bgcolor: "grey.100", "&:hover": { bgcolor: "grey.200" } }}
+                    >
+                      Limpiar
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      onClick={handleGuardarVisitor}
+                    >
+                      Guardar
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
+
+              {/* Lower Section: Tabla */}
+              <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                   <TableHead>
-                    <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Nombre</TableCell>
-                      <TableCell>Teléfono</TableCell>
-                      <TableCell>Estado</TableCell>
-                      <TableCell>Acciones</TableCell>
+                    <TableRow sx={{ bgcolor: "grey.50" }}>
+                      <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Área de atención</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Cédula Visitador</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Nombre Visitador</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Teléfono</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Acción</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {loadingVisitors ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center">
-                          <CircularProgress size={24} />
+                        <TableCell colSpan={6} align="center">
+                          <CircularProgress size={24} sx={{ my: 2 }} />
                         </TableCell>
                       </TableRow>
                     ) : visitors.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center">
-                          No hay visitadores registrados.
+                        <TableCell colSpan={6} align="center">
+                          Sin visitadores registrados
                         </TableCell>
                       </TableRow>
                     ) : (
-                      visitors.map((visitor) => (
-                        <TableRow key={visitor.id}>
-                          <TableCell>{visitor.id}</TableCell>
-                          <TableCell>{visitor.name}</TableCell>
-                          <TableCell>{visitor.phone}</TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={visitor.active}
-                              color="success"
-                              size="small"
-                              onChange={() => toggleActivoVisitor(visitor)}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Stack direction="row" spacing={1}>
-                              <Tooltip title="Editar">
-                                <IconButton size="small" onClick={() => editarVisitor(visitor)}>
-                                  <IconPencil size={16} />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Eliminar">
-                                <IconButton color="error" size="small" onClick={() => eliminarVisitor(visitor.id)}>
-                                  <IconTrash size={16} />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      visitors
+                        .slice(
+                          visitorPage * visitorRowsPerPage,
+                          visitorPage * visitorRowsPerPage + visitorRowsPerPage
+                        )
+                        .map((visitor) => (
+                          <TableRow key={visitor.id} hover>
+                            <TableCell>{visitor.id.toString().padStart(3, "0")}</TableCell>
+                            <TableCell>{selectedArea?.name || "—"}</TableCell>
+                            <TableCell>{visitor.cedula || "—"}</TableCell>
+                            <TableCell>{visitor.name}</TableCell>
+                            <TableCell>{visitor.phone || "—"}</TableCell>
+                            <TableCell>
+                              <Stack direction="row" spacing={0.5} alignItems="center">
+                                <Tooltip title={visitor.active ? "Desactivar" : "Activar"}>
+                                  <Switch
+                                    checked={visitor.active}
+                                    onChange={() => toggleActivoVisitor(visitor)}
+                                    size="small"
+                                    color="success"
+                                  />
+                                </Tooltip>
+                                <Tooltip title="Editar">
+                                  <IconButton size="small" onClick={() => editarVisitor(visitor)}>
+                                    <IconPencil size={16} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Eliminar">
+                                  <IconButton
+                                    color="error"
+                                    size="small"
+                                    onClick={() => eliminarVisitor(visitor.id)}
+                                  >
+                                    <IconTrash size={16} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        ))
                     )}
                   </TableBody>
                 </Table>
               </TableContainer>
-            </Stack>
+
+              <TablePagination
+                component="div"
+                count={visitors.length}
+                page={visitorPage}
+                onPageChange={(_, newPage) => setVisitorPage(newPage)}
+                rowsPerPage={visitorRowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setVisitorRowsPerPage(parseInt(e.target.value, 10));
+                  setVisitorPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25]}
+                labelRowsPerPage="Filas por página:"
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`
+                }
+              />
+            </Box>
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ p: 2 }}>
             <Button onClick={() => setVisitorDialogOpen(false)}>Cerrar</Button>
           </DialogActions>
         </Dialog>

@@ -112,6 +112,7 @@ model Visitor {
   id        Int            @id @default(autoincrement())
   areaId    Int
   area      AttentionArea  @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  cedula    String         @default("")
   name      String
   phone     String?
   active    Boolean        @default(true)

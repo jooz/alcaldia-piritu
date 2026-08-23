@@ -27,6 +27,7 @@ export async function POST(
     const visitor = await prisma.visitor.create({
       data: {
         areaId: Number(id),
+        cedula: body.cedula ?? "",
         name: body.name,
         phone: body.phone,
         active: body.active ?? true,
