@@ -29,7 +29,7 @@ async function main() {
     ventanaIds.push(row.id);
   }
 
-  // Usuario admin por defecto (credenciales fijas de prueba)
+  // Usuario administrador - acceso total a todas las ventanas
   const admin = await prisma.user.upsert({
     where: { username: "admin" },
     update: {},
@@ -42,36 +42,33 @@ async function main() {
     },
   });
 
-  // Admin tiene acceso a todas las ventanas
   await prisma.userAcceso.deleteMany({ where: { userId: admin.id } });
   for (const vid of ventanaIds) {
     await prisma.userAcceso.create({ data: { userId: admin.id, ventanaId: vid } });
   }
 
-  // Usuario demo con acceso limitado
-  const demo = await prisma.user.upsert({
-    where: { username: "demo" },
+  // Usuario operador - acceso solo al dashboard
+  const operador = await prisma.user.upsert({
+    where: { username: "operador" },
     update: {},
     create: {
-      username: "demo",
-      password: bcrypt.hashSync("Demo123!", 10),
-      nombre: "Usuario Demo",
-      email: "demo@alcaldiapiritu.gob.ve",
+      username: "operador",
+      password: bcrypt.hashSync("Operador123!", 10),
+      nombre: "Operador",
+      email: "operador@alcaldiapiritu.gob.ve",
       activo: true,
     },
   });
 
-  // Demo solo ve Dashboard
-  await prisma.userAcceso.deleteMany({ where: { userId: demo.id } });
+  await prisma.userAcceso.deleteMany({ where: { userId: operador.id } });
   const dash = await prisma.ventana.findUnique({ where: { clave: "dashboard" } });
   if (dash) {
-    await prisma.userAcceso.create({ data: { userId: demo.id, ventanaId: dash.id } });
+    await prisma.userAcceso.create({ data: { userId: operador.id, ventanaId: dash.id } });
   }
 
-  console.log("Seed OK:");
-  console.log("  Ventanas:", ventanas.map((v) => v.clave).join(", "));
-  console.log("  admin / Admin123! (todas las ventanas)");
-  console.log("  demo / Demo123! (solo Dashboard)");
+  console.log("Seed completado:");
+  console.log("  Ventanas:", ventanas.length);
+  console.log("  Usuarios creados: admin (todas las ventanas), operador (solo dashboard)");
 }
 
 main()

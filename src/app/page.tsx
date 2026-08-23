@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -145,14 +144,7 @@ const LoginPage = () => {
                 </Button>
               </form>
 
-              <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
-                <Typography color="textSecondary" variant="h6" fontWeight="500">
-                  Credenciales de prueba:{" "}
-                </Typography>
-                <Typography component={Link} href="#" fontWeight="500" sx={{ color: "primary.main" }}>
-                  admin / Admin123!
-                </Typography>
-              </Stack>
+
             </Card>
           </Grid>
         </Grid>
