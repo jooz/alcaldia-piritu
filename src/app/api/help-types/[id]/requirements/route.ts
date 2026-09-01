@@ -7,13 +7,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const helpRequirements = await prisma.helpRequirement.findMany({
-      where: { helpTypeId: Number(id) },
-      include: {
-        requirement: true,
-      },
-    });
-    return NextResponse.json(helpRequirements);
+    const requirements = await prisma.$queryRawUnsafe(`
+      SELECT 
+        tar.id,
+        tar.tipo_ayuda_id AS "helpTypeId",
+        tar.requirement_id AS "requirementId",
+        json_build_object('id', r.id, 'name', r.name, 'condition', r.condition, 'requiresValidity', r."requiresValidity", 'validityDays', r."validityDays", 'mandatory', r.mandatory, 'active', r.active) AS requirement
+      FROM tipos_ayuda_requirement tar
+      JOIN "Requirement" r ON r.id = tar.requirement_id
+      WHERE tar.tipo_ayuda_id = $1
+    `, Number(id));
+    return NextResponse.json(requirements);
   } catch (error) {
     return NextResponse.json({ error: 'Error fetching help requirements' }, { status: 500 });
   }
@@ -32,23 +36,32 @@ export async function POST(
       return NextResponse.json({ error: 'requirementIds array is required' }, { status: 400 });
     }
 
-    // Delete existing relationships for this helpType
-    await prisma.helpRequirement.deleteMany({
-      where: { helpTypeId: Number(id) },
-    });
+    // Delete existing relationships
+    await prisma.$queryRawUnsafe(
+      `DELETE FROM tipos_ayuda_requirement WHERE tipo_ayuda_id = $1`,
+      Number(id)
+    );
 
     // Create new relationships
-    const data = requirementIds.map((requirementId: number) => ({
-      helpTypeId: Number(id),
-      requirementId,
-    }));
+    for (const requirementId of requirementIds) {
+      await prisma.$queryRawUnsafe(
+        `INSERT INTO tipos_ayuda_requirement (tipo_ayuda_id, requirement_id) VALUES ($1, $2)`,
+        Number(id),
+        requirementId
+      );
+    }
 
-    await prisma.helpRequirement.createMany({ data });
-
-    const updated = await prisma.helpRequirement.findMany({
-      where: { helpTypeId: Number(id) },
-      include: { requirement: true },
-    });
+    // Return updated list
+    const updated = await prisma.$queryRawUnsafe(`
+      SELECT 
+        tar.id,
+        tar.tipo_ayuda_id AS "helpTypeId",
+        tar.requirement_id AS "requirementId",
+        json_build_object('id', r.id, 'name', r.name, 'condition', r.condition, 'requiresValidity', r."requiresValidity", 'validityDays', r."validityDays", 'mandatory', r.mandatory, 'active', r.active) AS requirement
+      FROM tipos_ayuda_requirement tar
+      JOIN "Requirement" r ON r.id = tar.requirement_id
+      WHERE tar.tipo_ayuda_id = $1
+    `, Number(id));
 
     return NextResponse.json(updated);
   } catch (error) {

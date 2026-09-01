@@ -16,8 +16,6 @@ model Category {
   description String
   active      Boolean  @default(true)
   creado      DateTime @default(now())
-
-  helpTypes HelpType[]
 }
 
 // ============================================================
@@ -32,8 +30,6 @@ model Requirement {
   mandatory        Boolean  @default(true)
   active           Boolean  @default(true)
   creado           DateTime @default(now())
-
-  helpRequirements HelpRequirement[]
 }
 
 // ============================================================
@@ -76,24 +72,10 @@ model UserAcceso {
 }
 
 // ============================================================
-// FASE 1: Modelos nuevos - Tipos de Ayuda, Áreas, Visitadores, Recaudos
+// FASE 1: Áreas y Visitadores
 // ============================================================
 
-// Tipo de Ayuda (subcategorías vinculadas a Category) - Tarea 1.1
-model HelpType {
-  id          Int       @id @default(autoincrement())
-  categoryId  Int
-  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  name        String
-  description String    @default("")
-  active      Boolean   @default(true)
-  creado      DateTime  @default(now())
-
-  requirements HelpRequirement[]
-  @@index([categoryId])
-}
-
-// Áreas de Atención (Direcciones/Departamentos) - Tarea 1.2
+// Áreas de Atención (Direcciones/Departamentos)
 model AttentionArea {
   id          Int       @id @default(autoincrement())
   name        String
@@ -121,15 +103,96 @@ model Visitor {
   @@index([areaId])
 }
 
-// Tabla intermedia para vincular HelpType con Requirement (N:M) - Tarea 1.4
-model HelpRequirement {
-  id          Int        @id @default(autoincrement())
-  helpTypeId  Int
-  helpType    HelpType   @relation(fields: [helpTypeId], references: [id], onDelete: Cascade)
-  requirementId Int
-  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+// ============================================================
+// FASE 2: Solicitudes de Ayuda
+// ============================================================
 
-  @@unique([helpTypeId, requirementId])
-  @@index([helpTypeId])
-  @@index([requirementId])
+// Persona que solicita la ayuda (se reutiliza por cédula)
+model Solicitante {
+  id                   Int      @id @default(autoincrement())
+  cedula               String   @unique
+  nombre               String
+  genero_id            Int
+  fecha_nacimiento     DateTime
+  telefono_habitacion  String   @default("")
+  telefono_movil       String   @default("")
+  email                String   @default("")
+  estado_civil_id      Int?
+  condicion_especial_id Int
+  municipio_id         Int
+  parroquia_id         Int
+  direccion            String
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  solicitudes Solicitud[]
+}
+
+// Solicitud de ayuda
+model Solicitud {
+  id                    Int      @id @default(autoincrement())
+  solicitanteId         Int
+  solicitante           Solicitante @relation(fields: [solicitanteId], references: [id], onDelete: Restrict)
+
+  solicitud_para        String   // "propia" | "menores"
+  parentesco_id         Int?
+  menor_cedula          String   @default("")
+  menor_nombre          String   @default("")
+  menor_genero_id       Int?
+  menor_fecha_nacimiento DateTime?
+  menor_condicion_especial_id Int?
+
+  categoria_solicitud_id Int
+  tipo_ayuda_id          Int
+
+  estado                String   @default("pendiente") // pendiente | aprobada | rechazada
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  educacion             SolicitudEducacion?
+  seguridadAlimentaria  SolicitudSeguridadAlimentaria?
+  recaudos              SolicitudRecaudo[]
+
+  @@index([solicitanteId])
+  @@index([categoria_solicitud_id])
+}
+
+// Datos específicos: Educación
+model SolicitudEducacion {
+  id                   Int       @id @default(autoincrement())
+  solicitudId          Int       @unique
+  solicitud            Solicitud @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  municipio_id         Int
+  parroquia_id         Int?
+  tipo_institucion_id  Int
+  institucion_id       Int?
+  uniformes            Json      @default("[]") // [{uniformeId, uniformeNombre, talla}]
+  created_at           DateTime  @default(now())
+}
+
+// Datos específicos: Seguridad Alimentaria
+model SolicitudSeguridadAlimentaria {
+  id                        Int       @id @default(autoincrement())
+  solicitudId               Int       @unique
+  solicitud                 Solicitud @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  nucleo_adultos            Int
+  nucleo_menores_existe     Boolean   @default(false)
+  nucleo_menores_cantidad   Int       @default(0)
+  nucleo_discapacidad_existe Boolean  @default(false)
+  nucleo_discapacidad_cantidad Int    @default(0)
+  created_at                DateTime  @default(now())
+}
+
+// Recaudos adjuntados por solicitud
+model SolicitudRecaudo {
+  id              Int       @id @default(autoincrement())
+  solicitudId     Int
+  solicitud       Solicitud @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  requirementId   Int
+  fileName        String    @default("")
+  filePath        String    @default("")
+  checked         Boolean   @default(false)
+  created_at      DateTime  @default(now())
+
+  @@index([solicitudId])
 }

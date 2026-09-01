@@ -47,17 +47,14 @@ interface Requirement {
   active: boolean;
 }
 
-interface HelpType {
+interface TipoAyuda {
   id: number;
   name: string;
-  description: string;
-  active: boolean;
-  creado: string;
+  categoryId: number;
   requirements: { requirement: Requirement }[];
 }
 
 const emptyCategoryForm = { name: "", description: "" };
-const emptyHelpTypeForm = { name: "", description: "" };
 
 const CategoriesPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -67,14 +64,14 @@ const CategoriesPage = () => {
   const [editandoCat, setEditandoCat] = useState<Category | null>(null);
   const [catForm, setCatForm] = useState(emptyCategoryForm);
 
-  const [helpTypes, setHelpTypes] = useState<HelpType[]>([]);
+  const [helpTypes, setHelpTypes] = useState<TipoAyuda[]>([]);
   const [htLoading, setHtLoading] = useState(false);
   const [htError, setHtError] = useState<string | null>(null);
   const [htOpen, setHtOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
-  const [editandoHt, setEditandoHt] = useState<HelpType | null>(null);
-  const [htForm, setHtForm] = useState(emptyHelpTypeForm);
+  const [editandoHt, setEditandoHt] = useState<TipoAyuda | null>(null);
+  const [htName, setHtName] = useState("");
   const [htRequirements, setHtRequirements] = useState<number[]>([]);
 
   const [allRequirements, setAllRequirements] = useState<Requirement[]>([]);
@@ -124,7 +121,6 @@ const CategoriesPage = () => {
     cargarCategorias();
   }, [cargarCategorias]);
 
-  // Category CRUD
   const handleGuardarCategoria = async () => {
     setError(null);
     try {
@@ -183,12 +179,11 @@ const CategoriesPage = () => {
     setCatOpen(true);
   };
 
-  // Help Type CRUD
   const abrirHelpTypes = (categoryId: number, categoryName: string) => {
     setSelectedCategoryId(categoryId);
     setSelectedCategoryName(categoryName);
     setEditandoHt(null);
-    setHtForm(emptyHelpTypeForm);
+    setHtName("");
     setHtRequirements([]);
     setHtPage(0);
     setHtOpen(true);
@@ -199,12 +194,8 @@ const CategoriesPage = () => {
   const handleGuardarHelpType = async () => {
     setHtError(null);
     if (!selectedCategoryId) return;
-    if (!htForm.name.trim()) {
+    if (!htName.trim()) {
       setHtError("El nombre es obligatorio");
-      return;
-    }
-    if (!htForm.description.trim()) {
-      setHtError("La descripción es obligatoria");
       return;
     }
     try {
@@ -214,7 +205,7 @@ const CategoriesPage = () => {
         const res = await fetch(`/api/help-types/${editandoHt.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: htForm.name, description: htForm.description }),
+          body: JSON.stringify({ name: htName }),
         });
         if (!res.ok) {
           const data = await res.json();
@@ -225,7 +216,7 @@ const CategoriesPage = () => {
         const res = await fetch(`/api/categories/${selectedCategoryId}/help-types`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: htForm.name, description: htForm.description }),
+          body: JSON.stringify({ name: htName }),
         });
         if (!res.ok) {
           const data = await res.json();
@@ -242,7 +233,7 @@ const CategoriesPage = () => {
       });
 
       setEditandoHt(null);
-      setHtForm(emptyHelpTypeForm);
+      setHtName("");
       setHtRequirements([]);
       cargarHelpTypes(selectedCategoryId);
     } catch (e: any) {
@@ -250,17 +241,7 @@ const CategoriesPage = () => {
     }
   };
 
-  const toggleActivoHt = async (ht: HelpType) => {
-    if (!selectedCategoryId) return;
-    await fetch(`/api/help-types/${ht.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !ht.active }),
-    });
-    cargarHelpTypes(selectedCategoryId);
-  };
-
-  const eliminarHelpType = async (ht: HelpType) => {
+  const eliminarHelpType = async (ht: TipoAyuda) => {
     if (!selectedCategoryId) return;
     if (!confirm(`Eliminar tipo de ayuda "${ht.name}"?`)) return;
     const res = await fetch(`/api/help-types/${ht.id}`, { method: "DELETE" });
@@ -272,15 +253,15 @@ const CategoriesPage = () => {
     cargarHelpTypes(selectedCategoryId);
   };
 
-  const abrirEditarHelpType = (ht: HelpType) => {
+  const abrirEditarHelpType = (ht: TipoAyuda) => {
     setEditandoHt(ht);
-    setHtForm({ name: ht.name, description: ht.description || "" });
+    setHtName(ht.name);
     setHtRequirements(ht.requirements.map((r) => r.requirement.id));
   };
 
   const limpiarFormularioHt = () => {
     setEditandoHt(null);
-    setHtForm(emptyHelpTypeForm);
+    setHtName("");
     setHtRequirements([]);
   };
 
@@ -398,7 +379,7 @@ const CategoriesPage = () => {
         {/* Help Types Modal */}
         <Dialog open={htOpen} onClose={() => setHtOpen(false)} maxWidth="md" fullWidth>
           <DialogTitle fontWeight={700}>
-            Gestionar Tipo ayuda.
+            Gestionar Tipo de Ayuda - {selectedCategoryName}
           </DialogTitle>
           <DialogContent>
             <Box>
@@ -408,7 +389,6 @@ const CategoriesPage = () => {
                 </Alert>
               )}
 
-              {/* ===== Upper Section: Formulario ===== */}
               <Box
                 sx={{
                   p: 2,
@@ -421,38 +401,14 @@ const CategoriesPage = () => {
               >
                 <Stack spacing={2}>
                   <TextField
-                    label="Categoría"
+                    label="Nombre tipo de ayuda"
                     fullWidth
-                    value={selectedCategoryName}
-                    disabled
+                    required
+                    value={htName}
+                    onChange={(e) => setHtName(e.target.value)}
                     size="small"
-                    sx={{
-                      "& .MuiInputBase-root.Mui-disabled": {
-                        bgcolor: "grey.100",
-                      },
-                    }}
                   />
 
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                    <TextField
-                      label="Nombre tipo ayuda"
-                      fullWidth
-                      required
-                      value={htForm.name}
-                      onChange={(e) => setHtForm({ ...htForm, name: e.target.value })}
-                      size="small"
-                    />
-                    <TextField
-                      label="Descripción"
-                      fullWidth
-                      required
-                      value={htForm.description}
-                      onChange={(e) => setHtForm({ ...htForm, description: e.target.value })}
-                      size="small"
-                    />
-                  </Stack>
-
-                  {/* Recaudos / Requirements */}
                   <Box
                     sx={{
                       p: 2,
@@ -487,7 +443,6 @@ const CategoriesPage = () => {
                     </FormGroup>
                   </Box>
 
-                  {/* Botones de acción */}
                   <Stack direction="row" spacing={2} justifyContent="flex-end">
                     <Button
                       variant="outlined"
@@ -509,27 +464,25 @@ const CategoriesPage = () => {
 
               <Divider sx={{ mb: 2 }} />
 
-              {/* ===== Lower Section: Tabla de registros ===== */}
               <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ bgcolor: "grey.50" }}>
                       <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Nombre tipo ayuda</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Descripción del tipo de ayuda</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Nombre tipo de ayuda</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Acción</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {htLoading ? (
                       <TableRow>
-                        <TableCell colSpan={4} align="center">
+                        <TableCell colSpan={3} align="center">
                           <CircularProgress size={24} sx={{ my: 2 }} />
                         </TableCell>
                       </TableRow>
                     ) : helpTypes.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} align="center">
+                        <TableCell colSpan={3} align="center">
                           Sin tipos de ayuda registrados
                         </TableCell>
                       </TableRow>
@@ -538,17 +491,8 @@ const CategoriesPage = () => {
                         <TableRow key={ht.id} hover>
                           <TableCell>{ht.id.toString().padStart(3, "0")}</TableCell>
                           <TableCell>{ht.name}</TableCell>
-                          <TableCell>{ht.description || "—"}</TableCell>
                           <TableCell>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <Tooltip title={ht.active ? "Desactivar" : "Activar"}>
-                                <Switch
-                                  checked={ht.active}
-                                  onChange={() => toggleActivoHt(ht)}
-                                  size="small"
-                                  color="success"
-                                />
-                              </Tooltip>
+                            <Stack direction="row" spacing={1}>
                               <Tooltip title="Editar">
                                 <IconButton onClick={() => abrirEditarHelpType(ht)} size="small">
                                   <IconPencil size={16} />

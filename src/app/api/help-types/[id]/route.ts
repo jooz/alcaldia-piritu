@@ -8,15 +8,16 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const helpType = await prisma.helpType.update({
-      where: { id: Number(id) },
-      data: {
-        name: body.name,
-        description: body.description,
-        active: body.active,
-      },
-    });
-    return NextResponse.json(helpType);
+    await prisma.$queryRawUnsafe(
+      `UPDATE tipos_ayuda SET nombre = $1 WHERE id = $2`,
+      body.name,
+      Number(id)
+    );
+    const result = await prisma.$queryRawUnsafe(
+      `SELECT id, nombre AS name, categoria_solicitud_id AS "categoryId" FROM tipos_ayuda WHERE id = $1`,
+      Number(id)
+    );
+    return NextResponse.json((result as any[])[0]);
   } catch (error) {
     return NextResponse.json({ error: 'Error updating help type' }, { status: 500 });
   }
@@ -29,21 +30,22 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const helpType = await prisma.helpType.findUnique({
-      where: { id: Number(id) },
-      include: { requirements: true },
-    });
+    const requirements = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*) AS count FROM tipos_ayuda_requirement WHERE tipo_ayuda_id = $1`,
+      Number(id)
+    );
 
-    if (helpType && helpType.requirements.length > 0) {
+    if ((requirements as any[])[0].count > 0) {
       return NextResponse.json(
         { error: 'No se puede eliminar: tiene recaudos asociados' },
         { status: 400 }
       );
     }
 
-    await prisma.helpType.delete({
-      where: { id: Number(id) },
-    });
+    await prisma.$queryRawUnsafe(
+      `DELETE FROM tipos_ayuda WHERE id = $1`,
+      Number(id)
+    );
     return NextResponse.json({ message: 'Help type deleted successfully' });
   } catch (error) {
     return NextResponse.json({ error: 'Error deleting help type' }, { status: 500 });
