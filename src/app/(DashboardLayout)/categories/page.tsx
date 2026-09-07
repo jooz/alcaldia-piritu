@@ -23,7 +23,6 @@ import {
   CircularProgress,
   TablePagination,
   Checkbox,
-  FormGroup,
   FormControlLabel,
   Divider,
 } from "@mui/material";
@@ -63,6 +62,7 @@ const CategoriesPage = () => {
   const [catOpen, setCatOpen] = useState(false);
   const [editandoCat, setEditandoCat] = useState<Category | null>(null);
   const [catForm, setCatForm] = useState(emptyCategoryForm);
+  const [catFormError, setCatFormError] = useState<string | null>(null);
 
   const [helpTypes, setHelpTypes] = useState<TipoAyuda[]>([]);
   const [htLoading, setHtLoading] = useState(false);
@@ -121,19 +121,33 @@ const CategoriesPage = () => {
     cargarCategorias();
   }, [cargarCategorias]);
 
+  const validateCategoryForm = (): string | null => {
+    if (!catForm.name.trim()) return "El nombre de la categoría es obligatorio.";
+    if (catForm.name.length > 50) return "El nombre no puede exceder 50 caracteres.";
+    if (!catForm.description.trim()) return "La descripción es obligatoria.";
+    if (catForm.description.length > 100) return "La descripción no puede exceder 100 caracteres.";
+    return null;
+  };
+
   const handleGuardarCategoria = async () => {
-    setError(null);
+    setCatFormError(null);
+    const validationError = validateCategoryForm();
+    if (validationError) {
+      setCatFormError(validationError);
+      return;
+    }
+
     try {
       const res = editandoCat
         ? await fetch(`/api/categories/${editandoCat.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: catForm.name, description: catForm.description }),
+            body: JSON.stringify({ name: catForm.name.trim(), description: catForm.description.trim() }),
           })
         : await fetch("/api/categories", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(catForm),
+            body: JSON.stringify({ name: catForm.name.trim(), description: catForm.description.trim() }),
           });
       if (!res.ok) {
         const data = await res.json();
@@ -142,9 +156,10 @@ const CategoriesPage = () => {
       setCatOpen(false);
       setCatForm(emptyCategoryForm);
       setEditandoCat(null);
+      setCatFormError(null);
       cargarCategorias();
     } catch (e: any) {
-      setError(e.message || "Error guardando");
+      setCatFormError(e.message || "Error guardando");
     }
   };
 
@@ -170,12 +185,14 @@ const CategoriesPage = () => {
   const abrirNuevaCategoria = () => {
     setEditandoCat(null);
     setCatForm(emptyCategoryForm);
+    setCatFormError(null);
     setCatOpen(true);
   };
 
   const abrirEditarCategoria = (c: Category) => {
     setEditandoCat(c);
     setCatForm({ name: c.name, description: c.description });
+    setCatFormError(null);
     setCatOpen(true);
   };
 
@@ -205,7 +222,7 @@ const CategoriesPage = () => {
         const res = await fetch(`/api/help-types/${editandoHt.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: htName }),
+          body: JSON.stringify({ name: htName.trim() }),
         });
         if (!res.ok) {
           const data = await res.json();
@@ -216,7 +233,7 @@ const CategoriesPage = () => {
         const res = await fetch(`/api/categories/${selectedCategoryId}/help-types`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: htName }),
+          body: JSON.stringify({ name: htName.trim() }),
         });
         if (!res.ok) {
           const data = await res.json();
@@ -249,6 +266,12 @@ const CategoriesPage = () => {
       const data = await res.json();
       setHtError(data.error || "No se pudo eliminar");
       return;
+    }
+    // Fix pagination: if we deleted the last item on current page, go back one page
+    const newTotal = helpTypes.length - 1;
+    const maxPage = Math.max(0, Math.ceil(newTotal / htRowsPerPage) - 1);
+    if (htPage > maxPage) {
+      setHtPage(maxPage);
     }
     cargarHelpTypes(selectedCategoryId);
   };
@@ -297,7 +320,6 @@ const CategoriesPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
                   <TableCell>Nombre Categoría</TableCell>
                   <TableCell>Descripción de la Categoría</TableCell>
                   <TableCell>Estado</TableCell>
@@ -307,18 +329,17 @@ const CategoriesPage = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={4} align="center">
                       <CircularProgress size={24} sx={{ my: 2 }} />
                     </TableCell>
                   </TableRow>
                 ) : categories.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">Sin categorías</TableCell>
+                    <TableCell colSpan={4} align="center">Sin categorías</TableCell>
                   </TableRow>
                 ) : (
                   categories.map((c) => (
                     <TableRow key={c.id} hover>
-                      <TableCell>{c.id.toString().padStart(3, "0")}</TableCell>
                       <TableCell>{c.name}</TableCell>
                       <TableCell>{c.description}</TableCell>
                       <TableCell>
@@ -354,19 +375,28 @@ const CategoriesPage = () => {
           <DialogTitle>{editandoCat ? `Editar: ${editandoCat.name}` : "Nueva Categoría"}</DialogTitle>
           <DialogContent>
             <Stack spacing={2} mt={1}>
+              {catFormError && (
+                <Alert severity="error" onClose={() => setCatFormError(null)}>
+                  {catFormError}
+                </Alert>
+              )}
               <TextField
                 label="Nombre de la Categoría"
                 fullWidth
+                required
                 value={catForm.name}
                 onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
+                inputProps={{ maxLength: 50 }}
               />
               <TextField
                 label="Descripción"
                 fullWidth
                 multiline
                 rows={3}
+                required
                 value={catForm.description}
                 onChange={(e) => setCatForm({ ...catForm, description: e.target.value })}
+                inputProps={{ maxLength: 100 }}
               />
             </Stack>
           </DialogContent>
@@ -407,6 +437,7 @@ const CategoriesPage = () => {
                     value={htName}
                     onChange={(e) => setHtName(e.target.value)}
                     size="small"
+                    inputProps={{ maxLength: 100 }}
                   />
 
                   <Box
@@ -421,7 +452,7 @@ const CategoriesPage = () => {
                     <Typography variant="subtitle2" fontWeight={700} mb={1}>
                       Recaudos
                     </Typography>
-                    <FormGroup row>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1 }}>
                       {allRequirements.filter((r) => r.active).map((req) => (
                         <FormControlLabel
                           key={req.id}
@@ -440,7 +471,7 @@ const CategoriesPage = () => {
                           No hay recaudos disponibles
                         </Typography>
                       )}
-                    </FormGroup>
+                    </Box>
                   </Box>
 
                   <Stack direction="row" spacing={2} justifyContent="flex-end">
@@ -468,7 +499,6 @@ const CategoriesPage = () => {
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ bgcolor: "grey.50" }}>
-                      <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Nombre tipo de ayuda</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Acción</TableCell>
                     </TableRow>
@@ -476,20 +506,19 @@ const CategoriesPage = () => {
                   <TableBody>
                     {htLoading ? (
                       <TableRow>
-                        <TableCell colSpan={3} align="center">
+                        <TableCell colSpan={2} align="center">
                           <CircularProgress size={24} sx={{ my: 2 }} />
                         </TableCell>
                       </TableRow>
                     ) : helpTypes.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={3} align="center">
+                        <TableCell colSpan={2} align="center">
                           Sin tipos de ayuda registrados
                         </TableCell>
                       </TableRow>
                     ) : (
                       htPaginated.map((ht) => (
                         <TableRow key={ht.id} hover>
-                          <TableCell>{ht.id.toString().padStart(3, "0")}</TableCell>
                           <TableCell>{ht.name}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>

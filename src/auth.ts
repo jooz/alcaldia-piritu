@@ -23,17 +23,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const ok = bcrypt.compareSync(password, user.password);
         if (!ok) return null;
 
-        return { id: String(user.id), name: user.nombre, email: user.email };
+        return {
+          id: String(user.id),
+          name: user.nombre,
+          email: user.email,
+          username: user.username,
+          tipo_usuario: user.tipo_usuario,
+        };
       },
     }),
   ],
   callbacks: {
     jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.username = (user as any).username;
+        token.tipo_usuario = (user as any).tipo_usuario;
+      }
       return token;
     },
     session({ session, token }) {
       if (token.id) session.user.id = token.id as string;
+      if (token.username) (session.user as any).username = token.username;
+      if (token.tipo_usuario) (session.user as any).tipo_usuario = token.tipo_usuario;
       return session;
     },
   },

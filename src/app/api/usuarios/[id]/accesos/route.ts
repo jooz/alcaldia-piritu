@@ -15,6 +15,12 @@ export async function GET(_req: Request, { params }: Params) {
   });
   if (!user) return NextResponse.json({ error: "no existe" }, { status: 404 });
 
+  // TIC users have all ventanas
+  if (user.tipo_usuario === "tic") {
+    const allVentanas = await prisma.ventana.findMany();
+    return NextResponse.json({ ventanaIds: allVentanas.map((v) => v.id) });
+  }
+
   return NextResponse.json({ ventanaIds: user.accesos.map((a) => a.ventanaId) });
 }
 
@@ -33,6 +39,8 @@ export async function PUT(req: Request, { params }: Params) {
   if (!user) return NextResponse.json({ error: "no existe" }, { status: 404 });
   if (user.username === "admin")
     return NextResponse.json({ error: "El admin siempre tiene todas las ventanas" }, { status: 400 });
+  if (user.tipo_usuario === "tic")
+    return NextResponse.json({ error: "El usuario TIC tiene acceso total自动amente" }, { status: 400 });
 
   await prisma.$transaction([
     prisma.userAcceso.deleteMany({ where: { userId } }),

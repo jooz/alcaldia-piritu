@@ -31,9 +31,10 @@ interface Props {
   allowed: string[];
   ventanas: VentanaMeta[];
   user?: { name?: string | null; email?: string | null };
+  tipo_usuario?: string;
 }
 
-export default function DashboardShell({ children, allowed, ventanas, user }: Props) {
+export default function DashboardShell({ children, allowed, ventanas, user, tipo_usuario }: Props) {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   return (

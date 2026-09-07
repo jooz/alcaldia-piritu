@@ -121,6 +121,7 @@ const SaludTecnica = ({
             rows={2}
             value={form.salud_diagnostico}
             onChange={(e) => setForm({ ...form, salud_diagnostico: e.target.value })}
+            inputProps={{ maxLength: 200 }}
           />
         </Grid>
 
@@ -226,7 +227,8 @@ const SaludTecnica = ({
             size="small"
             inputMode="numeric"
             value={nuevaAyuda.peso}
-            onChange={(e) => setNuevaAyuda({ ...nuevaAyuda, peso: e.target.value.replace(/\D/g, "") })}
+            onChange={(e) => setNuevaAyuda({ ...nuevaAyuda, peso: e.target.value.replace(/\D/g, "").slice(0, 5) })}
+            inputProps={{ maxLength: 5 }}
           />
         </Grid>
 

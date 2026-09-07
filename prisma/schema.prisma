@@ -36,13 +36,14 @@ model Requirement {
 // Usuario del sistema (Alcaldía Piritú)
 // ============================================================
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String // hash bcrypt
-  nombre    String
-  email     String?
-  activo    Boolean  @default(true)
-  creado    DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  password      String // hash bcrypt
+  nombre        String
+  email         String?
+  activo        Boolean  @default(true)
+  tipo_usuario  String   @default("operador") // admin | tic | operador
+  creado        DateTime @default(now())
 
   accesos UserAcceso[]
 }

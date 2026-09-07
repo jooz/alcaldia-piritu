@@ -259,8 +259,9 @@ const Educacion = ({
                 size="small"
                 value={nuevaTalla.talla}
                 onChange={(e) =>
-                  setNuevaTalla({ ...nuevaTalla, talla: e.target.value })
+                  setNuevaTalla({ ...nuevaTalla, talla: e.target.value.replace(/\D/g, "").slice(0, 3) })
                 }
+                inputProps={{ maxLength: 3 }}
               />
             </Grid>
 

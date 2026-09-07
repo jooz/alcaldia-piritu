@@ -184,8 +184,9 @@ const Infraestructura = ({
             inputMode="numeric"
             value={nuevoMaterial.cantidad}
             onChange={(e) =>
-              setNuevoMaterial({ ...nuevoMaterial, cantidad: e.target.value.replace(/\D/g, "") })
+              setNuevoMaterial({ ...nuevoMaterial, cantidad: e.target.value.replace(/\D/g, "").slice(0, 5) })
             }
+            inputProps={{ maxLength: 5 }}
           />
         </Grid>
 

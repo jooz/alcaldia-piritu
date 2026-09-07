@@ -11,11 +11,10 @@ const LinkStyled = styled(Link)(() => ({
 
 const Logo = () => {
   return (
-    <LinkStyled href="/">
-      <Image src="/images/logos/dark-logo.svg" alt="logo" height={70} width={174} priority />
+    <LinkStyled href="/dashboard">
+      <Image src="/images/logos/logo_alcaldia_piritu.PNG" alt="Alcaldía de Píritu" height={70} width={174} priority style={{ objectFit: "contain" }} />
     </LinkStyled>
   );
 };
 
 export default Logo;
-  

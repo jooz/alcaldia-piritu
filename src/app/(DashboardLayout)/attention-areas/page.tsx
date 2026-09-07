@@ -339,6 +339,7 @@ const AttentionAreasPage = () => {
                 required
                 placeholder="ej. Dirección de Bienestar Social"
                 fullWidth
+                inputProps={{ maxLength: 40 }}
               />
               <TextField
                 label="Función Principal del área de atención"
@@ -348,6 +349,7 @@ const AttentionAreasPage = () => {
                 multiline
                 placeholder="Detalle las funciones y alcance del área"
                 fullWidth
+                inputProps={{ maxLength: 80 }}
               />
             </Stack>
 
@@ -361,10 +363,14 @@ const AttentionAreasPage = () => {
               <TextField
                 label="Cédula del Responsable"
                 value={areaForm.cedula}
-                onChange={(e) => setAreaForm({ ...areaForm, cedula: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setAreaForm({ ...areaForm, cedula: val });
+                }}
                 required
                 placeholder="ej. 15141471"
                 fullWidth
+                inputProps={{ maxLength: 10, inputMode: "numeric", pattern: "[0-9]*" }}
               />
               <TextField
                 label="Nombre del Responsable"
@@ -373,14 +379,25 @@ const AttentionAreasPage = () => {
                 required
                 placeholder="ej. Ester Romero"
                 fullWidth
+                inputProps={{ maxLength: 20 }}
               />
               <TextField
                 label="Teléfono del Responsable"
                 value={areaForm.telefono}
-                onChange={(e) => setAreaForm({ ...areaForm, telefono: e.target.value })}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  // Allow only digits and optional "+" at the beginning
+                  if (val.startsWith("+")) {
+                    val = "+" + val.slice(1).replace(/\D/g, "");
+                  } else {
+                    val = val.replace(/\D/g, "");
+                  }
+                  setAreaForm({ ...areaForm, telefono: val.slice(0, 13) });
+                }}
                 required
-                placeholder="ej. 04126714388"
+                placeholder="ej. 04126714388 o +5804127914589"
                 fullWidth
+                inputProps={{ maxLength: 13 }}
               />
             </Stack>
 
@@ -408,7 +425,6 @@ const AttentionAreasPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
                   <TableCell>Nombre Departamento</TableCell>
                   <TableCell>Responsable</TableCell>
                   <TableCell>Teléfono</TableCell>
@@ -419,20 +435,19 @@ const AttentionAreasPage = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={5} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
                 ) : areasPaginadas.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={5} align="center">
                       No hay áreas registradas.
                     </TableCell>
                   </TableRow>
                 ) : (
                   areasPaginadas.map((area) => (
                     <TableRow key={area.id}>
-                      <TableCell>{area.id}</TableCell>
                       <TableCell>{area.name}</TableCell>
                       <TableCell>{area.responsable}</TableCell>
                       <TableCell>{area.telefono}</TableCell>
@@ -532,8 +547,12 @@ const AttentionAreasPage = () => {
                       required
                       placeholder="ej. 15141471"
                       value={visitorForm.cedula}
-                      onChange={(e) => setVisitorForm({ ...visitorForm, cedula: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setVisitorForm({ ...visitorForm, cedula: val });
+                      }}
                       size="small"
+                      inputProps={{ maxLength: 10, inputMode: "numeric", pattern: "[0-9]*" }}
                     />
                     <TextField
                       label="Nombre del Visitador"
@@ -543,15 +562,25 @@ const AttentionAreasPage = () => {
                       value={visitorForm.name}
                       onChange={(e) => setVisitorForm({ ...visitorForm, name: e.target.value })}
                       size="small"
+                      inputProps={{ maxLength: 20 }}
                     />
                     <TextField
                       label="Teléfono del Visitador"
                       fullWidth
                       required
-                      placeholder="ej. 04126714388"
+                      placeholder="ej. 04126714388 o +5804127914589"
                       value={visitorForm.phone}
-                      onChange={(e) => setVisitorForm({ ...visitorForm, phone: e.target.value })}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (val.startsWith("+")) {
+                          val = "+" + val.slice(1).replace(/\D/g, "");
+                        } else {
+                          val = val.replace(/\D/g, "");
+                        }
+                        setVisitorForm({ ...visitorForm, phone: val.slice(0, 13) });
+                      }}
                       size="small"
+                      inputProps={{ maxLength: 13 }}
                     />
                   </Stack>
 
@@ -585,7 +614,6 @@ const AttentionAreasPage = () => {
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ bgcolor: "grey.50" }}>
-                      <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Área de atención</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Cédula Visitador</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Nombre Visitador</TableCell>
@@ -596,13 +624,13 @@ const AttentionAreasPage = () => {
                   <TableBody>
                     {loadingVisitors ? (
                       <TableRow>
-                        <TableCell colSpan={6} align="center">
+                        <TableCell colSpan={5} align="center">
                           <CircularProgress size={24} sx={{ my: 2 }} />
                         </TableCell>
                       </TableRow>
                     ) : visitors.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} align="center">
+                        <TableCell colSpan={5} align="center">
                           Sin visitadores registrados
                         </TableCell>
                       </TableRow>
@@ -614,7 +642,6 @@ const AttentionAreasPage = () => {
                         )
                         .map((visitor) => (
                           <TableRow key={visitor.id} hover>
-                            <TableCell>{visitor.id.toString().padStart(3, "0")}</TableCell>
                             <TableCell>{selectedArea?.name || "—"}</TableCell>
                             <TableCell>{visitor.cedula || "—"}</TableCell>
                             <TableCell>{visitor.name}</TableCell>

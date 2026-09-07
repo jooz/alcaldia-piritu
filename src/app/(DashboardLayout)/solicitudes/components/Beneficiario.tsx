@@ -114,9 +114,10 @@ const Beneficiario = ({
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    menor: { ...form.menor, cedula: onlyDigits(e.target.value) },
+                    menor: { ...form.menor, cedula: onlyDigits(e.target.value).slice(0, 10) },
                   })
                 }
+                inputProps={{ maxLength: 10 }}
               />
             </Grid>
 
@@ -133,6 +134,7 @@ const Beneficiario = ({
                     menor: { ...form.menor, nombre: e.target.value },
                   })
                 }
+                inputProps={{ maxLength: 100 }}
               />
             </Grid>
 

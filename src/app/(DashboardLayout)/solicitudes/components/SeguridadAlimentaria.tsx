@@ -43,8 +43,9 @@ const SeguridadAlimentaria = ({
             inputMode="numeric"
             value={form.nucleo_adultos}
             onChange={(e) =>
-              setForm({ ...form, nucleo_adultos: onlyDigits(e.target.value) })
+              setForm({ ...form, nucleo_adultos: onlyDigits(e.target.value).slice(0, 3) })
             }
+            inputProps={{ maxLength: 3 }}
           />
         </Grid>
 
@@ -75,8 +76,9 @@ const SeguridadAlimentaria = ({
             inputMode="numeric"
             value={form.nucleo_menores_cantidad}
             onChange={(e) =>
-              setForm({ ...form, nucleo_menores_cantidad: onlyDigits(e.target.value) })
+              setForm({ ...form, nucleo_menores_cantidad: onlyDigits(e.target.value).slice(0, 3) })
             }
+            inputProps={{ maxLength: 3 }}
           />
         </Grid>
 
@@ -112,9 +114,10 @@ const SeguridadAlimentaria = ({
             onChange={(e) =>
               setForm({
                 ...form,
-                nucleo_discapacidad_cantidad: onlyDigits(e.target.value),
+                nucleo_discapacidad_cantidad: onlyDigits(e.target.value).slice(0, 3),
               })
             }
+            inputProps={{ maxLength: 3 }}
           />
         </Grid>
       </Grid>

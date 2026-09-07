@@ -21,6 +21,13 @@ import type {
 
 const onlyDigits = (v: string) => v.replace(/\D/g, "");
 
+const phoneFormat = (v: string) => {
+  if (v.startsWith("+")) {
+    return "+" + v.slice(1).replace(/\D/g, "");
+  }
+  return v.replace(/\D/g, "");
+};
+
 interface DatosSolicitanteProps {
   form: any;
   setForm: (f: any) => void;
@@ -67,7 +74,8 @@ const DatosSolicitante = ({
             required
             inputMode="numeric"
             value={form.cedula}
-            onChange={(e) => setForm({ ...form, cedula: onlyDigits(e.target.value) })}
+            onChange={(e) => setForm({ ...form, cedula: onlyDigits(e.target.value).slice(0, 10) })}
+            inputProps={{ maxLength: 10 }}
             InputProps={{
               endAdornment: (
                 <Button
@@ -95,6 +103,7 @@ const DatosSolicitante = ({
             required
             value={form.nombre}
             onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+            inputProps={{ maxLength: 100 }}
           />
         </Grid>
 
@@ -161,11 +170,11 @@ const DatosSolicitante = ({
           <TextField
             label="Teléfono Habitación"
             fullWidth
-            inputMode="numeric"
             value={form.telefono_habitacion}
             onChange={(e) =>
-              setForm({ ...form, telefono_habitacion: onlyDigits(e.target.value) })
+              setForm({ ...form, telefono_habitacion: phoneFormat(e.target.value).slice(0, 13) })
             }
+            inputProps={{ maxLength: 13 }}
           />
         </Grid>
 
@@ -174,11 +183,11 @@ const DatosSolicitante = ({
           <TextField
             label="Teléfono Móvil"
             fullWidth
-            inputMode="numeric"
             value={form.telefono_movil}
             onChange={(e) =>
-              setForm({ ...form, telefono_movil: onlyDigits(e.target.value) })
+              setForm({ ...form, telefono_movil: phoneFormat(e.target.value).slice(0, 13) })
             }
+            inputProps={{ maxLength: 13 }}
           />
         </Grid>
 
@@ -190,6 +199,7 @@ const DatosSolicitante = ({
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
+            inputProps={{ maxLength: 40 }}
           />
         </Grid>
 
@@ -267,6 +277,7 @@ const DatosSolicitante = ({
             rows={2}
             value={form.direccion}
             onChange={(e) => setForm({ ...form, direccion: e.target.value })}
+            inputProps={{ maxLength: 200 }}
           />
         </Grid>
       </Grid>

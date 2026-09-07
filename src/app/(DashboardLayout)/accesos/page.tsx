@@ -36,6 +36,9 @@ interface Ventana {
   orden: number;
 }
 
+const TEMPLATE_CLAVES = ["Typography", "Shadow", "Icons", "sample-page"];
+const TEMPLATE_TITLES = ["Typography", "Shadow", "Icons", "Sample Page"];
+
 const AccesosPage = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [ventanas, setVentanas] = useState<Ventana[]>([]);
@@ -52,8 +55,16 @@ const AccesosPage = () => {
         fetch("/api/usuarios"),
         fetch("/api/ventanas"),
       ]);
-      setUsuarios(await uRes.json());
-      setVentanas(await vRes.json());
+      const uData = await uRes.json();
+      const vData = await vRes.json();
+      setUsuarios(uData);
+      setVentanas(
+        vData.filter(
+          (v: Ventana) =>
+            !TEMPLATE_CLAVES.includes(v.clave) &&
+            !TEMPLATE_TITLES.some((t) => v.titulo.includes(t))
+        )
+      );
     } catch {
       setMsg({ tipo: "error", texto: "No se pudieron cargar los datos" });
     } finally {
@@ -95,6 +106,9 @@ const AccesosPage = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error guardando accesos");
       setMsg({ tipo: "success", texto: "Acceso actualizado correctamente" });
+      // Clear form after successful save
+      setSelected(null);
+      setChecked(new Set());
     } catch (e: any) {
       setMsg({ tipo: "error", texto: e.message || "Error guardando accesos" });
     } finally {

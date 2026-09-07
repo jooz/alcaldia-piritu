@@ -56,6 +56,7 @@ const RequirementsPage = () => {
   const [open, setOpen] = useState(false);
   const [editando, setEditando] = useState<Requirement | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -75,19 +76,38 @@ const RequirementsPage = () => {
     cargar();
   }, [cargar]);
 
+  const validateForm = (): string | null => {
+    if (!form.name.trim()) return "El nombre del recaudo es obligatorio.";
+    if (form.name.length > 40) return "El nombre no puede exceder 40 caracteres.";
+    if (form.requiresValidity && form.validityDays <= 0) return "Si requiere vigencia, indique los días.";
+    return null;
+  };
+
   const handleGuardar = async () => {
-    setError(null);
+    setFormError(null);
+    const validationError = validateForm();
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
     try {
+      const payload = {
+        ...form,
+        name: form.name.trim(),
+        condition: form.condition.trim(),
+        validityDays: form.requiresValidity ? form.validityDays : 0,
+      };
       const res = editando
         ? await fetch(`/api/requirements/${editando.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form),
+            body: JSON.stringify(payload),
           })
         : await fetch("/api/requirements", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form),
+            body: JSON.stringify(payload),
           });
       if (!res.ok) {
         const data = await res.json();
@@ -96,9 +116,10 @@ const RequirementsPage = () => {
       setOpen(false);
       setForm(emptyForm);
       setEditando(null);
+      setFormError(null);
       cargar();
     } catch (e: any) {
-      setError(e.message || "Error guardando");
+      setFormError(e.message || "Error guardando");
     }
   };
 
@@ -124,6 +145,7 @@ const RequirementsPage = () => {
   const abrirNuevo = () => {
     setEditando(null);
     setForm(emptyForm);
+    setFormError(null);
     setOpen(true);
   };
 
@@ -136,6 +158,7 @@ const RequirementsPage = () => {
       validityDays: r.validityDays,
       mandatory: r.mandatory,
     });
+    setFormError(null);
     setOpen(true);
   };
 
@@ -160,7 +183,6 @@ const RequirementsPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
                   <TableCell>Nombre Recaudo</TableCell>
                   <TableCell>Obligatorio</TableCell>
                   <TableCell>Condición del Recaudo</TableCell>
@@ -171,18 +193,17 @@ const RequirementsPage = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={5} align="center">
                       <CircularProgress size={24} sx={{ my: 2 }} />
                     </TableCell>
                   </TableRow>
                 ) : requirements.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">Sin recaudos</TableCell>
+                    <TableCell colSpan={5} align="center">Sin recaudos</TableCell>
                   </TableRow>
                 ) : (
                   requirements.map((r) => (
                     <TableRow key={r.id} hover>
-                      <TableCell>{r.id.toString().padStart(3, "0")}</TableCell>
                       <TableCell>{r.name}</TableCell>
                       <TableCell>{r.mandatory ? "Si" : "No"}</TableCell>
                       <TableCell>{r.condition}</TableCell>
@@ -209,18 +230,26 @@ const RequirementsPage = () => {
           <DialogTitle>{editando ? `Editar Recaudo: ${editando.name}` : "Nuevo Recaudo"}</DialogTitle>
           <DialogContent>
             <Stack spacing={3} mt={1}>
+              {formError && (
+                <Alert severity="error" onClose={() => setFormError(null)}>
+                  {formError}
+                </Alert>
+              )}
               <Stack direction="row" spacing={2}>
                 <TextField
                   label="Nombre del Recaudo"
                   fullWidth
+                  required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  inputProps={{ maxLength: 40 }}
                 />
                 <TextField
                   label="Condición del Recaudo"
                   fullWidth
                   value={form.condition}
                   onChange={(e) => setForm({ ...form, condition: e.target.value })}
+                  inputProps={{ maxLength: 50 }}
                 />
               </Stack>
               <Stack direction="row" spacing={2} alignItems="center">
@@ -229,7 +258,14 @@ const RequirementsPage = () => {
                   <Select
                     label="Requiere Periodo de Vigencia"
                     value={form.requiresValidity ? "Si" : "No"}
-                    onChange={(e) => setForm({ ...form, requiresValidity: e.target.value === "Si" })}
+                    onChange={(e) => {
+                      const requires = e.target.value === "Si";
+                      setForm({
+                        ...form,
+                        requiresValidity: requires,
+                        validityDays: requires ? form.validityDays : 0,
+                      });
+                    }}
                   >
                     <MenuItem value="Si">Si</MenuItem>
                     <MenuItem value="No">No</MenuItem>
@@ -240,8 +276,9 @@ const RequirementsPage = () => {
                   type="number"
                   fullWidth
                   disabled={!form.requiresValidity}
-                  value={form.validityDays}
+                  value={form.requiresValidity ? form.validityDays : ""}
                   onChange={(e) => setForm({ ...form, validityDays: parseInt(e.target.value) || 0 })}
+                  inputProps={{ min: 0 }}
                 />
                 <FormControl fullWidth>
                   <InputLabel>Obligatorio</InputLabel>

@@ -36,13 +36,12 @@ const HREF_MAP: Record<string, string> = {
   categories: "/categories",
   requirements: "/requirements",
   "attention-areas": "/attention-areas",
-  "help-requirements": "/help-requirements",
   solicitudes: "/solicitudes",
 };
 
 const SECCIONES = [
-  { subheader: "HOME", claves: ["dashboard"] },
-  { subheader: "ADMINISTRACIÓN", claves: ["usuarios", "categories", "requirements", "attention-areas", "accesos"] },
+  { subheader: "INICIO", claves: ["dashboard"] },
+  { subheader: "ADMINISTRACIÓN", claves: ["usuarios", "categories", "requirements", "attention-areas", "accesos", "solicitudes"] },
 
 ];
 
@@ -161,9 +160,11 @@ const SidebarItems = ({ allowed, ventanas }: { allowed: string[]; ventanas: Vent
   return (
     <>
       <MUI_Sidebar width={"100%"} showProfile={false} themeColor={"#5D87FF"} themeSecondaryColor={'#49beff'}>
-        <Logo img="/images/logos/dark-logo.svg" component={Link} to="/dashboard">
-          Modernize
-        </Logo>
+        <Box sx={{ px: 2, py: 1.5, textAlign: "center", "& img": { width: "100%", height: 80, objectFit: "contain" } }}>
+          <Logo img="/images/logos/logo_alcaldia_piritu.PNG" component={Link} to="/dashboard">
+            Píritu
+          </Logo>
+        </Box>
         {renderMenuItems(visibleItems, pathDirect, allowed)}
         <Box px={2}>
 
