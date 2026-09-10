@@ -602,7 +602,7 @@ const CategoriesPage = () => {
           <DialogTitle>Confirmar eliminación</DialogTitle>
           <DialogContent>
             <Typography>
-              El tipo de ayuda "<strong>{htDeleteConfirm.ht?.name}</strong>" tiene{" "}
+              El tipo de ayuda &ldquo;<strong>{htDeleteConfirm.ht?.name}</strong>&rdquo; tiene{" "}
               <strong>{htDeleteConfirm.reqCount}</strong> recaudo(s) asociado(s).
             </Typography>
             <Typography sx={{ mt: 1 }}>
