@@ -116,6 +116,14 @@ const AttentionAreasPage = () => {
       setError("Todos los campos son obligatorios.");
       return;
     }
+    if (areaForm.cedula.trim().length < 7) {
+      setError("La cédula del responsable debe tener al menos 7 dígitos.");
+      return;
+    }
+    if (areaForm.telefono.trim().length < 10) {
+      setError("El teléfono del responsable debe tener al menos 10 dígitos.");
+      return;
+    }
 
     try {
       setError(null);
@@ -231,12 +239,20 @@ const AttentionAreasPage = () => {
       setError("La cédula del visitador es obligatoria.");
       return;
     }
+    if (visitorForm.cedula.trim().length < 7) {
+      setError("La cédula del visitador debe tener al menos 7 dígitos.");
+      return;
+    }
     if (!visitorForm.name.trim()) {
       setError("El nombre del visitador es obligatorio.");
       return;
     }
     if (!visitorForm.phone.trim()) {
       setError("El teléfono del visitador es obligatorio.");
+      return;
+    }
+    if (visitorForm.phone.trim().length < 10) {
+      setError("El teléfono del visitador debe tener al menos 10 dígitos.");
       return;
     }
 
@@ -370,7 +386,7 @@ const AttentionAreasPage = () => {
                 required
                 placeholder="ej. 15141471"
                 fullWidth
-                inputProps={{ maxLength: 10, inputMode: "numeric", pattern: "[0-9]*" }}
+                inputProps={{ maxLength: 10, minLength: 7, inputMode: "numeric", pattern: "[0-9]*" }}
               />
               <TextField
                 label="Nombre del Responsable"
@@ -397,7 +413,7 @@ const AttentionAreasPage = () => {
                 required
                 placeholder="ej. 04126714388 o +5804127914589"
                 fullWidth
-                inputProps={{ maxLength: 13 }}
+                inputProps={{ maxLength: 13, minLength: 10 }}
               />
             </Stack>
 
@@ -552,7 +568,7 @@ const AttentionAreasPage = () => {
                         setVisitorForm({ ...visitorForm, cedula: val });
                       }}
                       size="small"
-                      inputProps={{ maxLength: 10, inputMode: "numeric", pattern: "[0-9]*" }}
+                      inputProps={{ maxLength: 10, minLength: 7, inputMode: "numeric", pattern: "[0-9]*" }}
                     />
                     <TextField
                       label="Nombre del Visitador"
@@ -580,7 +596,7 @@ const AttentionAreasPage = () => {
                         setVisitorForm({ ...visitorForm, phone: val.slice(0, 13) });
                       }}
                       size="small"
-                      inputProps={{ maxLength: 13 }}
+                      inputProps={{ maxLength: 13, minLength: 10 }}
                     />
                   </Stack>
 

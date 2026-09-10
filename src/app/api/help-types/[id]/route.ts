@@ -29,22 +29,30 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const numId = Number(id);
+    const confirm = request.nextUrl.searchParams.get('confirm') === 'true';
 
     const requirements = await prisma.$queryRawUnsafe(
       `SELECT COUNT(*) AS count FROM tipos_ayuda_requirement WHERE tipo_ayuda_id = $1`,
-      Number(id)
+      numId
     );
+    const reqCount = Number((requirements as any[])[0].count);
 
-    if ((requirements as any[])[0].count > 0) {
+    if (reqCount > 0 && !confirm) {
       return NextResponse.json(
-        { error: 'No se puede eliminar: tiene recaudos asociados' },
-        { status: 400 }
+        { error: 'tiene_recaudos', count: reqCount },
+        { status: 409 }
       );
     }
 
     await prisma.$queryRawUnsafe(
+      `DELETE FROM tipos_ayuda_requirement WHERE tipo_ayuda_id = $1`,
+      numId
+    );
+
+    await prisma.$queryRawUnsafe(
       `DELETE FROM tipos_ayuda WHERE id = $1`,
-      Number(id)
+      numId
     );
     return NextResponse.json({ message: 'Help type deleted successfully' });
   } catch (error) {

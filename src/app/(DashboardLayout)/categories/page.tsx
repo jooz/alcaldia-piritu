@@ -79,6 +79,12 @@ const CategoriesPage = () => {
   const [htPage, setHtPage] = useState(0);
   const [htRowsPerPage, setHtRowsPerPage] = useState(5);
 
+  const [htDeleteConfirm, setHtDeleteConfirm] = useState<{ open: boolean; ht: TipoAyuda | null; reqCount: number }>({
+    open: false,
+    ht: null,
+    reqCount: 0,
+  });
+
   const cargarCategorias = useCallback(async () => {
     setLoading(true);
     try {
@@ -260,14 +266,35 @@ const CategoriesPage = () => {
 
   const eliminarHelpType = async (ht: TipoAyuda) => {
     if (!selectedCategoryId) return;
-    if (!confirm(`Eliminar tipo de ayuda "${ht.name}"?`)) return;
     const res = await fetch(`/api/help-types/${ht.id}`, { method: "DELETE" });
+    if (res.status === 409) {
+      const data = await res.json();
+      setHtDeleteConfirm({ open: true, ht, reqCount: data.count });
+      return;
+    }
     if (!res.ok) {
       const data = await res.json();
       setHtError(data.error || "No se pudo eliminar");
       return;
     }
-    // Fix pagination: if we deleted the last item on current page, go back one page
+    const newTotal = helpTypes.length - 1;
+    const maxPage = Math.max(0, Math.ceil(newTotal / htRowsPerPage) - 1);
+    if (htPage > maxPage) {
+      setHtPage(maxPage);
+    }
+    cargarHelpTypes(selectedCategoryId);
+  };
+
+  const confirmarEliminarHelpType = async () => {
+    const { ht } = htDeleteConfirm;
+    if (!ht || !selectedCategoryId) return;
+    const res = await fetch(`/api/help-types/${ht.id}?confirm=true`, { method: "DELETE" });
+    setHtDeleteConfirm({ open: false, ht: null, reqCount: 0 });
+    if (!res.ok) {
+      const data = await res.json();
+      setHtError(data.error || "No se pudo eliminar");
+      return;
+    }
     const newTotal = helpTypes.length - 1;
     const maxPage = Math.max(0, Math.ceil(newTotal / htRowsPerPage) - 1);
     if (htPage > maxPage) {
@@ -565,6 +592,32 @@ const CategoriesPage = () => {
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
             <Button onClick={() => setHtOpen(false)}>Cerrar</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={htDeleteConfirm.open}
+          onClose={() => setHtDeleteConfirm({ open: false, ht: null, reqCount: 0 })}
+        >
+          <DialogTitle>Confirmar eliminación</DialogTitle>
+          <DialogContent>
+            <Typography>
+              El tipo de ayuda "<strong>{htDeleteConfirm.ht?.name}</strong>" tiene{" "}
+              <strong>{htDeleteConfirm.reqCount}</strong> recaudo(s) asociado(s).
+            </Typography>
+            <Typography sx={{ mt: 1 }}>
+              ¿Desea eliminar el tipo de ayuda junto con todos sus recaudos asociados?
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button
+              onClick={() => setHtDeleteConfirm({ open: false, ht: null, reqCount: 0 })}
+            >
+              Cancelar
+            </Button>
+            <Button variant="contained" color="error" onClick={confirmarEliminarHelpType}>
+              Eliminar
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>

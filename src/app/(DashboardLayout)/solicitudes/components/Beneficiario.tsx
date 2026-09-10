@@ -117,7 +117,7 @@ const Beneficiario = ({
                     menor: { ...form.menor, cedula: onlyDigits(e.target.value).slice(0, 10) },
                   })
                 }
-                inputProps={{ maxLength: 10 }}
+                inputProps={{ maxLength: 10, minLength: 7 }}
               />
             </Grid>
 

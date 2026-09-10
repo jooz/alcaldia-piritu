@@ -240,16 +240,23 @@ const SolicitudesPage = () => {
 
   const validarFormulario = (): string | null => {
     if (!form.cedula.trim()) return "La cédula del solicitante es requerida";
+    if (form.cedula.trim().length < 7) return "La cédula del solicitante debe tener al menos 7 dígitos";
     if (!form.nombre.trim()) return "El nombre del solicitante es requerido";
     if (!form.genero_id) return "El género es requerido";
     if (!form.fecha_nacimiento) return "La fecha de nacimiento es requerida";
     if (!form.condicion_especial_id) return "La condición especial es requerida";
     if (!form.parroquia_id) return "La parroquia es requerida";
     if (!form.direccion.trim()) return "La dirección de habitación es requerida";
+    if (form.telefono_habitacion && form.telefono_habitacion.trim().length < 10)
+      return "El teléfono de habitación debe tener al menos 10 dígitos";
+    if (form.telefono_movil && form.telefono_movil.trim().length < 10)
+      return "El teléfono móvil debe tener al menos 10 dígitos";
     if (!form.solicitud_para) return "El tipo de solicitud es requerido";
 
     if (form.solicitud_para === "menores") {
       if (!form.parentesco_id) return "El parentesco con el menor es requerido";
+      if (!form.menor.cedula.trim()) return "La cédula del menor es requerida";
+      if (form.menor.cedula.trim().length < 7) return "La cédula del menor debe tener al menos 7 dígitos";
       if (!form.menor.nombre.trim()) return "El nombre del menor es requerido";
       if (!form.menor.genero_id) return "El género del menor es requerido";
       if (!form.menor.fecha_nacimiento)

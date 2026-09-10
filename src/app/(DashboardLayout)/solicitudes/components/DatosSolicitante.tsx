@@ -75,7 +75,7 @@ const DatosSolicitante = ({
             inputMode="numeric"
             value={form.cedula}
             onChange={(e) => setForm({ ...form, cedula: onlyDigits(e.target.value).slice(0, 10) })}
-            inputProps={{ maxLength: 10 }}
+            inputProps={{ maxLength: 10, minLength: 7 }}
             InputProps={{
               endAdornment: (
                 <Button
@@ -174,7 +174,7 @@ const DatosSolicitante = ({
             onChange={(e) =>
               setForm({ ...form, telefono_habitacion: phoneFormat(e.target.value).slice(0, 13) })
             }
-            inputProps={{ maxLength: 13 }}
+            inputProps={{ maxLength: 13, minLength: 10 }}
           />
         </Grid>
 
@@ -187,7 +187,7 @@ const DatosSolicitante = ({
             onChange={(e) =>
               setForm({ ...form, telefono_movil: phoneFormat(e.target.value).slice(0, 13) })
             }
-            inputProps={{ maxLength: 13 }}
+            inputProps={{ maxLength: 13, minLength: 10 }}
           />
         </Grid>
 
