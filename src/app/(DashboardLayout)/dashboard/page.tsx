@@ -85,12 +85,12 @@ const Dashboard = () => {
         {/* 1. Filtros Superiores */}
         <Paper sx={{ p: 2, mb: 3, borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
           <Grid container alignItems="center" spacing={2}>
-            <Grid xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#374151' }}>
                 Parameters of Search:
               </Typography>
             </Grid>
-            <Grid xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Stack direction="row" spacing={2} justifyContent={{ xs: 'flex-start', md: 'flex-end' }}>
                 <TextField 
                   label="Fecha Inicio" 
@@ -112,7 +112,7 @@ const Dashboard = () => {
         {/* 2. Métricas Clave (KPIs) */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {KPI_DATA.map((kpi, index) => (
-            <Grid xs={12} sm={6} md={3} key={index}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
               <Card sx={{ p: 2, borderRadius: 3, boxShadow: '0 4px 6px rgba(0,0,0,0.02)', borderLeft: `6px solid ${kpi.color}` }}>
                 <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, mb: 1 }}>
                   {kpi.title}
@@ -134,12 +134,12 @@ const Dashboard = () => {
 
         {/* 3. Sección Gráfica */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Card sx={{ p: 2, borderRadius: 3, boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
               <Chart options={barChartOptions} series={barChartSeries} type="bar" height={350} />
             </Card>
           </Grid>
-          <Grid xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Card sx={{ p: 2, borderRadius: 3, boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
               <Chart options={donutChartOptions} series={donutChartSeries} type="donut" height={350} />
             </Card>
